@@ -343,10 +343,10 @@ img {
 }
 
 .article {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-xl);
-    padding: 48px 48px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 48px 0;
 }
 
 .article-header {
@@ -633,8 +633,8 @@ img {
     }
 
     .article {
-        padding: 28px 24px;
-        border-radius: var(--radius-lg);
+        padding: 20px 0;
+        border-radius: 0;
     }
 
     .article-title {
