@@ -1,15 +1,15 @@
 /**
  * 文章数据列表
  * 每次发布新文章时，在此数组头部添加一条记录即可。
- * 
- * 字段说明：
- *   slug    - 文章唯一标识，也是 HTML 文件名（不含 .html）
- *   title   - 文章标题
- *   date    - 发布日期 YYYY-MM-DD
- *   summary - 首页摘要
- *   tags    - 标签数组
  */
 const POSTS = [
+    {
+        slug: "intelligent-npc-architecture",
+        title: "构建沉浸世界的智能NPC（一）基础架构",
+        date: "2026-03-27",
+        summary: "为Unity游戏构建了一套完整的AI NPC对话系统，让NPC能够根据世界观、角色人设、游戏状态进行智能对话。本文以幽灵公主艾琳娜的案例为线索，展示系统从传统预设对话到完整AI对话系统的八个演进阶段。",
+        tags: ["AI", "游戏开发", "NPC对话", "架构设计"]
+    },
     {
         slug: "thinking-about-thinking",
         title: "关于思考的思考",

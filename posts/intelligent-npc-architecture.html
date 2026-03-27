@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>构建沉浸世界的智能NPC（一）基础架构 - Juehui's Thoughts</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <h1 class="site-title"><a href="../index.html">Juehui's Thoughts</a></h1>
+            <p class="site-description">记录思考，沉淀认知</p>
+            <nav class="site-nav">
+                <a href="../index.html">首页</a>
+                <a href="../about.html">关于</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="header-divider"></div>
+
+    <div class="article-layout">
+        <!-- 左侧目录 -->
+        <aside class="article-toc">
+            <div class="toc-title">目录</div>
+            <ul class="toc-list" id="toc-list">
+                <li><a href="#intro">核心成果</a></li>
+                <li><a href="#case">案例导入：玩家与幽灵的对话</a></li>
+                <li><a href="#part1">第一部分：体验演进</a></li>
+                <li><a href="#stage1" class="toc-h3">阶段一：传统预设对话</a></li>
+                <li><a href="#stage2" class="toc-h3">阶段二：引入AI大模型</a></li>
+                <li><a href="#stage3" class="toc-h3">阶段三：世界书系统</a></li>
+                <li><a href="#stage4" class="toc-h3">阶段四：角色卡系统</a></li>
+                <li><a href="#stage5" class="toc-h3">阶段五：私有记忆与认知限制</a></li>
+                <li><a href="#stage6" class="toc-h3">阶段六：记忆系统</a></li>
+                <li><a href="#stage7" class="toc-h3">阶段七：作者注释</a></li>
+                <li><a href="#stage8" class="toc-h3">阶段八：动态权重机制</a></li>
+                <li><a href="#part2">第二部分：工程实现</a></li>
+                <li><a href="#context-eng" class="toc-h3">本质：上下文工程</a></li>
+                <li><a href="#abstraction" class="toc-h3">从现实世界抽象</a></li>
+                <li><a href="#prompt-reveal" class="toc-h3">完整对话流程</a></li>
+                <li><a href="#workflow" class="toc-h3">内容创作工作流</a></li>
+                <li><a href="#performance" class="toc-h3">性能优化</a></li>
+                <li><a href="#summary">总结</a></li>
+            </ul>
+        </aside>
+
+        <!-- 右侧正文 -->
+        <div class="article-main">
+            <article class="article">
+                <header class="article-header">
+                    <h1 class="article-title">构建沉浸世界的智能NPC（一）基础架构</h1>
+                    <div class="article-meta">
+                        2026-03-27 · <span class="tag">AI</span> <span class="tag">游戏开发</span> <span class="tag">NPC对话</span> <span class="tag">架构设计</span>
+                    </div>
+                </header>
+
+                <div class="article-content">
+                    <p>为Unity游戏构建了一套完整的AI NPC对话系统，让NPC能够根据世界观、角色人设、游戏状态进行智能对话。本文将以一个具体案例为线索，展示系统从"传统预设对话"到"完整AI对话系统"的演进过程。</p>
+
+                    <hr>
+
+                    <h2 id="intro">核心成果</h2>
+
+                    <table>
+                        <thead><tr><th>指标</th><th>数值</th></tr></thead>
+                        <tbody>
+                            <tr><td>核心子系统</td><td>6个（人设卡、世界书、上下文编排、记忆、时间、调试）</td></tr>
+                            <tr><td>Context Provider</td><td>6种（Persona、AuthorNote、WorldBook、ChatSummary、VectorMemory、GameState）</td></tr>
+                            <tr><td>Token成本优化</td><td>减少50-70%（通过智能编排只注入相关片段）</td></tr>
+                            <tr><td>查询性能优化</td><td>250x-1000x（倒排索引 + Regex缓存）</td></tr>
+                        </tbody>
+                    </table>
+
+                    <hr>
+
+                    <h2 id="case">案例导入：玩家与幽灵的对话</h2>
+
+                    <blockquote><p>全文将以这个案例为线索，展示系统从"传统预设对话"到"完整AI对话系统"的演进过程。</p></blockquote>
+
+                    <p><strong>场景设定：</strong></p>
+                    <ul>
+                        <li><strong>地点</strong>：废弃的古堡地下室</li>
+                        <li><strong>NPC</strong>：艾琳娜（300年前被囚禁于此的贵族幽灵）</li>
+                        <li><strong>背景</strong>：艾琳娜生前是王国公主，因被诬陷通敌而被囚禁，死后化为幽灵，徘徊在古堡中寻找证明清白的证据</li>
+                    </ul>
+
+                    <hr>
+
+                    <h2 id="part1">第一部分：体验演进</h2>
+
+                    <h3 id="stage1">阶段一：传统预设对话（痛点分析）</h3>
+
+                    <p>传统的对话树实现方式：</p>
+
+<pre><code>// 传统的对话树实现
+public class TraditionalDialogue : MonoBehaviour
+{
+    private Dictionary&lt;string, string[]&gt; dialogueOptions = new()
+    {
+        {"greeting", new[] {"你是谁？", "这里是什么地方？", "我想离开"}},
+        {"response_who", new[] {"我是艾琳娜...曾经的公主。"}},
+        {"response_where", new[] {"这是我被囚禁的地方..."}},
+        {"response_leave", new[] {"你可以走，但我走不了..."}}
+    };
+}</code></pre>
+
+                    <p><strong>玩家</strong>：你知道关于黑龙战争的事吗？</p>
+
+                    <table>
+                        <thead><tr><th>传统方案</th><th>问题</th></tr></thead>
+                        <tbody>
+                            <tr><td>「抱歉，我不明白你在说什么」</td><td>NPC只能回应预设问题</td></tr>
+                            <tr><td>或者干脆没有回应选项</td><td>对话树无法处理开放问题</td></tr>
+                        </tbody>
+                    </table>
+
+                    <p><strong>传统对话树的三大痛点：</strong></p>
+                    <ul>
+                        <li>无法处理开放问题 — 玩家只能从预设选项中选</li>
+                        <li>缺乏记忆和连贯性 — 每次对话都是全新开始</li>
+                        <li>内容创作成本高 — 每个NPC需要大量对话分支</li>
+                    </ul>
+
+                    <h3 id="stage2">阶段二：引入AI大模型（基础能力）</h3>
+
+                    <p><strong>玩家</strong>：你知道关于黑龙战争的事吗？</p>
+
+                    <table>
+                        <thead><tr><th>AI方案</th><th>效果</th></tr></thead>
+                        <tbody><tr><td>「黑龙战争？那是一场可怕的战争，发生在很久以前...」</td><td>能够回应开放问题了！</td></tr></tbody>
+                    </table>
+
+                    <p>但新问题出现了 — AI太自由，会胡编乱造：</p>
+
+                    <table>
+                        <thead><tr><th>AI回答</th><th>问题</th></tr></thead>
+                        <tbody>
+                            <tr><td>「黑龙战争死了一百万人，国王亲自出征...」</td><td>AI编造的！游戏里不是这样设定的</td></tr>
+                        </tbody>
+                    </table>
+
+                    <blockquote><p><strong>关键洞察</strong>：AI太自由了，我们需要<strong>约束AI只说应该说的内容</strong>——这就是世界书要做的事。</p></blockquote>
+
+                    <h3 id="stage3">阶段三：世界书系统（约束AI的知识边界）</h3>
+
+                    <p>核心问题：如何让AI只说我们设定好的内容，不要胡编？</p>
+                    <p>解决方案：创建一个"知识库"，当玩家提到某个话题时，把相关知识注入给AI。</p>
+
+                    <p><strong>世界书条目示例：</strong></p>
+<pre><code>{
+  "entryId": "wb_dragon_war",
+  "title": "黑龙战争",
+  "keywords": ["黑龙战争", "黑龙", "尼德霍格"],
+  "content": "黑龙战争发生在280年前，持续三年。黑龙'尼德霍格'袭击王国北境。
+              最终被银月骑士团击退，但王国北部十城化为废墟。
+              艾琳娜的兄长阿尔贝特王子在此战中阵亡。"
+}</code></pre>
+
+                    <p><strong>触发机制：</strong>玩家说"你知道黑龙战争吗？" → 关键词匹配 → 注入对应知识到Prompt</p>
+
+                    <p><strong>效果：</strong></p>
+                    <table>
+                        <thead><tr><th>有世界书</th><th>效果</th></tr></thead>
+                        <tbody><tr><td>「黑龙战争发生在280年前，我的兄长阿尔贝特就是在那场战争中阵亡的......那头叫尼德霍格的黑龙，我至今还记得。」</td><td>知识准确，与游戏设定一致！</td></tr></tbody>
+                    </table>
+
+                    <p>但表达方式还是很机械 — 像在念百科全书，没有情感。</p>
+
+                    <blockquote><p><strong>关键洞察</strong>：世界书解决了"说什么"的问题，但没解决"怎么说"的问题。我们需要给NPC注入<strong>性格和灵魂</strong>。</p></blockquote>
+
+                    <h3 id="stage4">阶段四：角色卡系统（激活NPC性格）</h3>
+
+                    <p>核心问题：如何让NPC有独特的性格、语气、情感表达？</p>
+
+                    <p><strong>角色卡示例：</strong></p>
+<pre><code>你是艾琳娜，300年前因被诬陷通敌而被囚禁于此的公主幽灵。
+
+## 性格特点
+- 高贵但不傲慢，对善意的人友好
+- 带着深深的悲伤和执念
+- 对"背叛"这个词极其敏感
+- 渴望被理解和帮助
+
+## 说话风格
+- 使用古典优雅的措辞
+- 常用"......"表示沉默或回忆
+- 提到过去时会变得忧伤
+- 偶尔流露出贵族的骄傲</code></pre>
+
+                    <p><strong>效果：</strong></p>
+                    <table>
+                        <thead><tr><th>玩家提问</th><th>有角色卡的回答</th></tr></thead>
+                        <tbody>
+                            <tr><td>你是怎么死的？</td><td>「......我被关在这里三年，最后病死在这冰冷的牢房里。那一天，是我22岁生日......时间太久了，我有时会忘记......」</td></tr>
+                            <tr><td>你恨陷害你的人吗？</td><td>「恨？......也许曾经恨过。但300年的时间，足够让恨意消散。现在我只想......证明我的清白，然后安息。」</td></tr>
+                        </tbody>
+                    </table>
+
+                    <p><strong>世界书 vs 角色卡的分工：</strong></p>
+
+                    <table>
+                        <thead><tr><th>模块</th><th>解决的问题</th><th>内容类型</th><th>共享性</th></tr></thead>
+                        <tbody>
+                            <tr><td><strong>世界书</strong></td><td>说什么（知识）</td><td>事件、地点、物品、历史</td><td>所有NPC共享</td></tr>
+                            <tr><td><strong>角色卡</strong></td><td>怎么说（性格）</td><td>语气、措辞、情感、态度</td><td>每个NPC独有</td></tr>
+                        </tbody>
+                    </table>
+
+                    <blockquote><p>为什么要分开？黑龙战争是世界的客观事实，艾琳娜和酒馆老板都可能知道。但艾琳娜提到战争时会悲伤（因为兄长阵亡），酒馆老板则可能只是感慨。分开后可以复用：新增NPC只需写角色卡，关联现有世界书即可。</p></blockquote>
+
+                    <h3 id="stage5">阶段五：私有记忆与认知限制</h3>
+
+                    <p>核心问题：如何让不同NPC知道不同的事情？NPC不应该是全知全能的。</p>
+
+                    <p>通过角色卡中的 <code>worldBooks</code> 字段指定NPC能够访问的世界书条目：</p>
+
+<pre><code>{
+  "npcId": 1001,
+  "npcName": "艾琳娜",
+  "worldBooks": [
+    "wb_dragon_war",         // 公共知识：黑龙战争
+    "wb_ghost_castle",       // 公共知识：古堡历史
+    "wb_elina_secret_letter" // 私有知识：只有艾琳娜知道信件位置
+  ]
+}</code></pre>
+
+                    <p><strong>效果对比：</strong></p>
+                    <table>
+                        <thead><tr><th>角色</th><th>问"信件藏在哪"</th></tr></thead>
+                        <tbody>
+                            <tr><td>艾琳娜（有私有知识）</td><td>「......信件就藏在东塔的密室里。那是我临死前托侍女莉莉丝藏起来的......」</td></tr>
+                            <tr><td>酒馆老板（无此知识）</td><td>「信件？什么信件？你说的是那个古堡里的幽灵公主吗？我只听说过那个传说......」</td></tr>
+                        </tbody>
+                    </table>
+
+                    <h3 id="stage6">阶段六：记忆系统（维持对话连贯性）</h3>
+
+                    <p>核心问题：如何让NPC记住对话内容，即使对话历史被裁剪？</p>
+
+                    <p><strong>三级记忆架构：</strong></p>
+                    <ul>
+                        <li><strong>L1：短期记忆</strong> — 最近10轮对话，直接作为Messages发给AI</li>
+                        <li><strong>L2：对话摘要</strong> — 压缩早期对话为摘要，保留关键信息（5-10x压缩）</li>
+                        <li><strong>L3：长期记忆</strong> — 重要事实存储为JSON，跨会话保留</li>
+                    </ul>
+
+                    <p><strong>效果：</strong></p>
+                    <table>
+                        <thead><tr><th>场景</th><th>NPC回答</th></tr></thead>
+                        <tbody>
+                            <tr><td>第20轮："你还记得我叫什么吗？"</td><td>「艾德里安......当然记得。你是唯一一个说要帮我的人。」</td></tr>
+                            <tr><td>跨会话（第二天登录）："我回来了。"</td><td>「艾德里安！你真的回来了......我还以为你会像其他人一样，离开后就忘记我。」</td></tr>
+                        </tbody>
+                    </table>
+
+                    <h3 id="stage7">阶段七：作者注释（运行时引导）</h3>
+
+                    <p>核心问题：如何在运行时动态引导NPC说符合当前情况的话？</p>
+
+                    <p>作者注释（Author's Note）是一种运行时动态注入的引导信息，告诉AI"当前应该注意什么"。</p>
+
+<pre><code>{
+  "authorNoteEnabled": true,
+  "authorNoteContent": "当前情境：玩家刚获得东塔钥匙。你应该：
+    1.表现出惊喜和希望 2.主动提到信件的事 3.引导玩家前往东塔",
+  "authorNoteDepth": 2
+}</code></pre>
+
+                    <table>
+                        <thead><tr><th>无作者注释</th><th>有作者注释</th></tr></thead>
+                        <tbody><tr><td>「你想聊什么？」</td><td>「艾德里安！你手里拿的是......东塔的钥匙？！300年了，终于有人能打开那扇门了......」</td></tr></tbody>
+                    </table>
+
+                    <p><strong>常见应用场景：</strong></p>
+                    <table>
+                        <thead><tr><th>场景</th><th>作者注释内容</th></tr></thead>
+                        <tbody>
+                            <tr><td>玩家首次见面</td><td>"这是第一次见面，应该先自我介绍"</td></tr>
+                            <tr><td>任务完成后</td><td>"表现出感激，给予奖励，提示下一步任务"</td></tr>
+                            <tr><td>玩家长时间未行动</td><td>"委婉提醒玩家当前目标"</td></tr>
+                            <tr><td>剧情高潮点</td><td>"情绪激动，语气强烈"</td></tr>
+                        </tbody>
+                    </table>
+
+                    <h3 id="stage8">阶段八：动态权重机制（解决答非所问）</h3>
+
+                    <p>核心问题：如何确保NPC的回答始终聚焦在玩家关心的话题上？</p>
+
+                    <p>当系统注入了大量上下文，AI可能会被不相关的信息干扰。解决方案是<strong>匹配权重加成</strong>：</p>
+
+<pre><code>最终权重 = 基础优先级 × 匹配权重 × 新鲜度权重
+
+匹配权重：
+- 关键词精确匹配当前问题：1.5x
+- 部分匹配：1.0x
+- 无匹配：0.8x
+
+效果（玩家问"东塔钥匙在哪"）：
+├── 东塔钥匙：50 × 1.5 = 75 ← 现在最高了！
+├── 黑龙战争：70 × 0.8 = 56
+└── 古堡历史：60 × 0.8 = 48</code></pre>
+
+                    <p><strong>防复读机制</strong> — 新鲜度权重衰减：</p>
+                    <ul>
+                        <li>刚使用（1轮内）：0.2x — 大幅降低</li>
+                        <li>最近使用（3轮内）：0.5x</li>
+                        <li>较近使用（10轮内）：0.8x</li>
+                        <li>久未使用：1.0x</li>
+                    </ul>
+
+                    <p><strong>至此，体验演进完成：</strong></p>
+                    <ul>
+                        <li>能回应开放问题（AI大模型）</li>
+                        <li>知识准确不胡编（世界书）</li>
+                        <li>有独特性格表达（角色卡）</li>
+                        <li>认知有边界（私有记忆）</li>
+                        <li>能记住对话内容（记忆系统）</li>
+                        <li>能引导玩法（作者注释）</li>
+                        <li>回答聚焦不跑题（动态权重）</li>
+                    </ul>
+
+                    <blockquote><p>但这一切的背后，<strong>本质上是在做一件事</strong>——上下文工程。</p></blockquote>
+
+                    <hr>
+
+                    <h2 id="part2">第二部分：工程实现</h2>
+
+                    <h3 id="context-eng">本质：LLM的上下文工程</h3>
+
+                    <p>前面所有的"魔法"，本质上都是在做一件事：<strong>在有限的Token预算内，给AI组装最合适的上下文。</strong></p>
+
+                    <p>LLM只是一个"补全器"，它只能基于你给它的上下文来回答。给它什么，它就用什么来回答：</p>
+
+                    <table>
+                        <thead><tr><th>输入（上下文）</th><th>输出（回答）</th></tr></thead>
+                        <tbody>
+                            <tr><td>"你是艾琳娜，一个幽灵"</td><td>冷冰冰的幽灵回答</td></tr>
+                            <tr><td>"你是艾琳娜，300年前被囚禁的公主幽灵，性格忧伤高贵......"</td><td>有情感、有故事的回答</td></tr>
+                            <tr><td>上面 + "黑龙战争的历史知识"</td><td>知识准确的回答</td></tr>
+                            <tr><td>上面 + "玩家刚完成任务，表现惊喜"</td><td>推进剧情的回答</td></tr>
+                        </tbody>
+                    </table>
+
+                    <p>所以，<strong>AI对话系统的核心工作 = 为每次对话组装最合适的上下文</strong>。</p>
+
+                    <p><strong>上下文组装流程：</strong></p>
+                    <ol>
+                        <li><strong>加载Persona</strong> — PersonaManager获取NPC人设</li>
+                        <li><strong>WorldBook匹配</strong> — 倒排索引O(1)查找相关知识</li>
+                        <li><strong>记忆检索</strong> — 查找对话摘要 + 长期记忆</li>
+                        <li><strong>作者注释</strong> — 检查是否有运行时引导</li>
+                        <li><strong>上下文编排</strong> — 收集所有Provider片段，按权重排序，Token预算内裁剪</li>
+                        <li><strong>构建Prompt</strong> — 组装SystemPrompt + Messages</li>
+                        <li><strong>API请求</strong> — 流式请求，打字机效果展示</li>
+                    </ol>
+
+                    <h3 id="abstraction">总体思路总结：从现实世界抽象而来</h3>
+
+                    <p>整个系统是对<strong>现实世界中"人"如何对话</strong>的抽象：</p>
+
+                    <table>
+                        <thead><tr><th>现实世界</th><th>系统设计</th></tr></thead>
+                        <tbody>
+                            <tr><td>世界客观存在的事实</td><td>世界书（WorldBook）— 所有NPC共享的知识库</td></tr>
+                            <tr><td>每个人独特的性格</td><td>角色卡（Persona）— 决定NPC"怎么说话"</td></tr>
+                            <tr><td>每个人知道的不一样</td><td>认知限制（WorldBooks关联）— NPC只能访问关联的知识</td></tr>
+                            <tr><td>每个人有自己的记忆</td><td>记忆系统（Memory）— 摘要 + 长期记忆持久化</td></tr>
+                            <tr><td>对话时会根据情境调整</td><td>作者注释（AuthorNote）— 运行时动态引导</td></tr>
+                            <tr><td>注意力会集中在关键话题</td><td>动态权重（匹配加成）— 相关信息优先级提升</td></tr>
+                        </tbody>
+                    </table>
+
+                    <p><strong>游戏世界的三层架构：</strong></p>
+                    <ul>
+                        <li><strong>A. 客观事实（世界书）</strong>：独立于任何角色存在的事实。所有NPC共享，是世界的"真相"。</li>
+                        <li><strong>B. 人格性格（角色卡）</strong>：决定NPC"怎么说话"。每个NPC独有，是角色的"灵魂"。</li>
+                        <li><strong>C. 认知记忆（关联机制 + 记忆系统）</strong>：NPC不是全知全能的。限制NPC知道什么、记得什么。</li>
+                    </ul>
+
+                    <h3 id="prompt-reveal">完整对话流程：实际Prompt揭示</h3>
+
+                    <p>当玩家问"你知道黑龙战争吗？"时，系统最终组装出的Prompt：</p>
+
+<pre><code># SystemPrompt（实际发送给AI的内容）
+
+## 角色设定
+你是艾琳娜，300年前因被诬陷通敌而被囚禁于此的公主幽灵。
+性格特点：高贵但不傲慢，带着深深的悲伤和执念......
+[来自PersonaProvider，~500 tokens]
+
+## 作者注释
+当前场景氛围：神秘、悲伤。引导玩家探索古堡秘密。
+[来自AuthorNoteProvider，~50 tokens]
+
+## 世界知识
+[黑龙战争]
+黑龙战争发生在280年前，持续三年......艾琳娜的兄长阵亡。
+[来自WorldBookProvider，~200 tokens]
+
+[王子阿尔贝特]
+艾尔文王国王子，艾琳娜的兄长。在黑龙战争中英勇战死......
+[来自WorldBookProvider递归触发，~150 tokens]
+
+## 对话摘要
+玩家自称艾德里安，是冒险者，表示愿意帮助艾琳娜证明清白。
+[来自ChatSummaryProvider，~100 tokens]
+
+## 当前状态
+- 游戏时间：夜晚
+- 地点：古堡地下室
+[来自GameStateProvider，~30 tokens]
+
+---
+总计：~1030 tokens（预算1500内）</code></pre>
+
+                    <h3 id="workflow">内容创作工作流</h3>
+
+                    <p>这套工作流的目标是让策划专注于创意工作：</p>
+
+<pre><code>传统方式：
+策划 → 写Excel表格 → 手动配置关键词 → 手动导入Unity → 反复调试
+
+新方式：
+策划 → 写剧本（创意工作）→ LLM自动拆分 → 一键导入 → 监控面板调试
+              ↑
+      策划只需要专注这里</code></pre>
+
+                    <p><strong>工作流步骤：</strong></p>
+                    <ol>
+                        <li><strong>策划编写剧本</strong>（.md文件）— 场景描述、角色设定、对话示例、关键事件</li>
+                        <li><strong>LLM辅助拆分</strong>（Coze工作流）— 自动生成角色卡JSON和世界书条目JSON</li>
+                        <li><strong>Unity导入工具</strong>（Editor Window）— 选择JSON文件，预览后一键导入</li>
+                        <li><strong>监控面板调试</strong> — 实时查看Prompt构建详情、Token消耗、Provider状态</li>
+                    </ol>
+
+                    <h3 id="performance">性能优化</h3>
+
+                    <table>
+                        <thead><tr><th>策略</th><th>实现方式</th><th>效果</th></tr></thead>
+                        <tbody>
+                            <tr><td>上下文编排</td><td>只注入相关片段</td><td>Token减少50-70%</td></tr>
+                            <tr><td>倒排索引</td><td>Dictionary快速查询</td><td>O(n)→O(1)</td></tr>
+                            <tr><td>Regex缓存</td><td>预编译正则表达式</td><td>1000x提升</td></tr>
+                            <tr><td>Token熔断</td><td>maxTokens限制</td><td>防止超限</td></tr>
+                            <tr><td>对话摘要</td><td>压缩历史对话</td><td>5-10x压缩</td></tr>
+                        </tbody>
+                    </table>
+
+                    <p><strong>Token成本估算：</strong></p>
+
+                    <table>
+                        <thead><tr><th>场景</th><th>优化前</th><th>优化后</th><th>节省</th></tr></thead>
+                        <tbody>
+                            <tr><td>单次对话（50条WorldBook）</td><td>~12,500 tokens</td><td>~1,500 tokens</td><td><strong>88%</strong></td></tr>
+                            <tr><td>20轮对话历史</td><td>~4,000 tokens</td><td>~1,200 tokens</td><td><strong>70%</strong></td></tr>
+                            <tr><td>每日1000次对话</td><td>~12.5M tokens</td><td>~1.5M tokens</td><td><strong>88%</strong></td></tr>
+                        </tbody>
+                    </table>
+
+                    <p><strong>响应时长：</strong>用户感知的等待时间主要是API请求时间（~1秒），本地处理（WorldBook查询~0.2ms + 上下文编排~8ms）几乎无感知。</p>
+
+                    <hr>
+
+                    <h2 id="summary">总结</h2>
+
+                    <p>从传统对话树到完整AI对话系统的演进路线：</p>
+
+                    <ol>
+                        <li><strong>传统对话树</strong> → 无法处理开放问题</li>
+                        <li><strong>接入AI大模型</strong> → AI会胡编乱造</li>
+                        <li><strong>世界书系统</strong> → 约束AI的知识边界</li>
+                        <li><strong>角色卡系统</strong> → 激活NPC性格</li>
+                        <li><strong>私有记忆</strong> → 认知限制</li>
+                        <li><strong>记忆系统</strong> → 维持对话连贯性</li>
+                        <li><strong>作者注释</strong> → 运行时引导</li>
+                        <li><strong>动态权重</strong> → 解决答非所问</li>
+                    </ol>
+
+                    <p>最终效果：玩家可以与NPC进行自然、连贯、有深度的AI对话。NPC记得玩家，了解世界观，保持角色一致，能引导玩法。Token成本可控，开发效率高，策划专注创作。</p>
+
+                    <p>而这一切的本质，就是<strong>上下文工程</strong>——在有限的Token预算内，为每次对话组装最合适的上下文。</p>
+
+                </div>
+            </article>
+
+            <div class="article-nav">
+                <a href="../index.html">← 返回首页</a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2026 Juehui's Thoughts · Hosted on <a href="https://pages.github.com" target="_blank">GitHub Pages</a></p>
+        </div>
+    </footer>
+
+    <script src="../js/toc.js"></script>
+</body>
+</html>
