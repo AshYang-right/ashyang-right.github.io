@@ -8,14 +8,14 @@ const POSTS = [
         title: "构建沉浸世界的智能 NPC（二）Context Assembly & Author's Note",
         date: "2026-03-27",
         summary: "如何让 NPC 引导玩家推进剧情？本文探讨时间系统、Author's Note 与 Depth 机制的协作——让世界从静止的蜡像馆变为正在运转的活世界。三层机制各司其职：时间回答'世界走到了哪里'，Author's Note 回答'NPC 现在该做什么'，Depth 回答'这件事有多急'。",
-        tags: ["AI", "游戏开发", "NPC对话", "上下文工程"]
+        tags: ["AI", "游戏开发", "NPC对话", "上下文工程", "智能NPC系列"]
     },
     {
         slug: "intelligent-npc-architecture",
         title: "构建沉浸世界的智能 NPC（一）Context is all you need !",
         date: "2026-03-27",
         summary: "为Unity游戏构建了一套完整的AI NPC对话系统，让NPC能够根据世界观、角色人设、游戏状态进行智能对话。本文以幽灵公主艾琳娜的案例为线索，展示系统从传统预设对话到完整AI对话系统的八个演进阶段。",
-        tags: ["AI", "游戏开发", "NPC对话", "架构设计"]
+        tags: ["AI", "游戏开发", "NPC对话", "架构设计", "智能NPC系列"]
     },
     {
         slug: "thinking-about-thinking",
