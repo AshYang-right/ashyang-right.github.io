@@ -3,13 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>为什么我开始写博客 - 我的思考博客</title>
+    <title>为什么我开始写博客 - Juehui's Thoughts</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
     <header class="site-header">
         <div class="container">
-            <h1 class="site-title"><a href="../index.html">我的思考博客</a></h1>
+            <div class="site-logo">
+                <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 4 L19.5 14.5 L26 6.5 L21 15.5 L31 11 L22 17 L32 18 L22 19 L31 25 L21 20.5 L26 29.5 L19.5 21.5 L18 32 L16.5 21.5 L10 29.5 L15 20.5 L5 25 L14 19 L4 18 L14 17 L5 11 L15 15.5 L10 6.5 L16.5 14.5 Z" fill="#c4703f"/>
+                </svg>
+            </div>
+            <h1 class="site-title"><a href="../index.html">Juehui's Thoughts</a></h1>
             <p class="site-description">记录思考，沉淀认知</p>
             <nav class="site-nav">
                 <a href="../index.html">首页</a>
@@ -18,52 +23,69 @@
         </div>
     </header>
 
-    <main class="container">
-        <article class="article">
-            <header class="article-header">
-                <h1 class="article-title">为什么我开始写博客</h1>
-                <div class="article-meta">2026-03-27 · 标签：写作、思考</div>
-            </header>
+    <div class="header-divider"></div>
 
-            <div class="article-content">
-                <p>今天是这个博客的第一天。在按下"发布"之前，我想先聊聊为什么要做这件事。</p>
+    <div class="article-layout">
+        <!-- 左侧目录 -->
+        <aside class="article-toc">
+            <div class="toc-title">目录</div>
+            <ul class="toc-list" id="toc-list">
+                <li><a href="#section-1">输出倒逼输入</a></li>
+                <li><a href="#section-2">对抗遗忘</a></li>
+                <li><a href="#section-3">建立思考的连续性</a></li>
+                <li><a href="#section-4">对这个博客的期待</a></li>
+            </ul>
+        </aside>
 
-                <h2>输出倒逼输入</h2>
-                <p>我发现，仅仅是"想"和"读"，很多时候会给我一种"我懂了"的错觉。但当我真正试图把一个观点写清楚时，才发现自己的理解有多少漏洞。</p>
+        <!-- 右侧正文 -->
+        <div class="article-main">
+            <article class="article">
+                <header class="article-header">
+                    <h1 class="article-title">为什么我开始写博客</h1>
+                    <div class="article-meta">
+                        2026-03-27 · <span class="tag">写作</span> <span class="tag">思考</span>
+                    </div>
+                </header>
 
-                <p>写作是最诚实的思考方式。你无法在文字中隐藏逻辑的跳跃和概念的模糊——至少，读者会发现它们。</p>
+                <div class="article-content">
+                    <p>今天是这个博客的第一天。在按下"发布"之前，我想先聊聊为什么要做这件事。</p>
 
-                <h2>对抗遗忘</h2>
-                <p>大脑是一台优秀的处理器，但不是一个可靠的硬盘。我曾经有过很多灵光一闪的想法，但因为没有记录下来，它们就这样消失了。</p>
+                    <h2 id="section-1">输出倒逼输入</h2>
+                    <p>我发现，仅仅是"想"和"读"，很多时候会给我一种"我懂了"的错觉。但当我真正试图把一个观点写清楚时，才发现自己的理解有多少漏洞。</p>
+                    <p>写作是最诚实的思考方式。你无法在文字中隐藏逻辑的跳跃和概念的模糊——至少，读者会发现它们。</p>
 
-                <blockquote>
-                    <p>最淡的墨水，也胜过最强的记忆。</p>
-                </blockquote>
+                    <h2 id="section-2">对抗遗忘</h2>
+                    <p>大脑是一台优秀的处理器，但不是一个可靠的硬盘。我曾经有过很多灵光一闪的想法，但因为没有记录下来，它们就这样消失了。</p>
 
-                <p>博客就是我的"外接硬盘"。把想法持久化，将来的自己可以回顾、修正、迭代。</p>
+                    <blockquote>
+                        <p>最淡的墨水，也胜过最强的记忆。</p>
+                    </blockquote>
 
-                <h2>建立思考的连续性</h2>
-                <p>零散的想法就像散落的珠子，单独看每一颗都不错，但串不起来就不成项链。通过持续写作，我希望自己的思考能逐渐形成体系，前后呼应，不断深化。</p>
+                    <p>博客就是我的"外接硬盘"。把想法持久化，将来的自己可以回顾、修正、迭代。</p>
 
-                <h2>对这个博客的期待</h2>
-                <p>我不追求更新频率，不追求阅读量。我对自己只有一个要求：</p>
+                    <h2 id="section-3">建立思考的连续性</h2>
+                    <p>零散的想法就像散落的珠子，单独看每一颗都不错，但串不起来就不成项链。通过持续写作，我希望自己的思考能逐渐形成体系，前后呼应，不断深化。</p>
 
-                <p><strong>每一篇文章，都要让发布后的自己比发布前更清楚一点。</strong></p>
+                    <h2 id="section-4">对这个博客的期待</h2>
+                    <p>我不追求更新频率，不追求阅读量。我对自己只有一个要求：</p>
+                    <p><strong>每一篇文章，都要让发布后的自己比发布前更清楚一点。</strong></p>
+                    <p>如果你也在思考类似的问题，欢迎通过文章底部的方式联系我，一起交流。</p>
+                </div>
+            </article>
 
-                <p>如果你也在思考类似的问题，欢迎通过文章底部的方式联系我，一起交流。</p>
+            <div class="article-nav">
+                <a href="thinking-about-thinking.html">← 上一篇</a>
+                <a href="../index.html">返回首页 →</a>
             </div>
-        </article>
-
-        <div class="article-nav">
-            <a href="thinking-about-thinking.html">← 上一篇</a>
-            <a href="../index.html">返回首页 →</a>
         </div>
-    </main>
+    </div>
 
     <footer class="site-footer">
         <div class="container">
-            <p>&copy; 2026 我的思考博客 · Hosted on <a href="https://pages.github.com" target="_blank">GitHub Pages</a></p>
+            <p>&copy; 2026 Juehui's Thoughts · Hosted on <a href="https://pages.github.com" target="_blank">GitHub Pages</a></p>
         </div>
     </footer>
+
+    <script src="../js/toc.js"></script>
 </body>
 </html>
