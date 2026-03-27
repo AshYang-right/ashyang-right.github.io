@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>构建沉浸世界的智能 NPC（二）Context Assembly &amp; Author's Note - Juehui's Thoughts</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,600&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <h1 class="site-title"><a href="../index.html">Juehui's Thoughts</a></h1>
+            <p class="site-description">记录思考，沉淀认知</p>
+            <nav class="site-nav">
+                <a href="../index.html">首页</a>
+                <a href="../about.html">关于</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="header-divider"></div>
+
+    <div class="article-layout">
+        <!-- 左侧目录 -->
+        <aside class="article-toc">
+            <div class="toc-title">目录</div>
+            <ul class="toc-list" id="toc-list">
+                <li><a href="#problem1">第一个问题：静止的世界没有体验</a></li>
+                <li><a href="#time-solution" class="toc-h3">解决方案：引入时间</a></li>
+                <li><a href="#time-calendar" class="toc-h3">给游戏世界一套历法</a></li>
+                <li><a href="#time-knowledge" class="toc-h3">时间决定"谁知道什么"</a></li>
+                <li><a href="#time-hooks" class="toc-h3">在剧本中安排时间钩子</a></li>
+                <li><a href="#time-power" class="toc-h3">用一句对话看时间的力量</a></li>
+                <li><a href="#problem2">第二个问题：谁来引导玩家？</a></li>
+                <li><a href="#author-note" class="toc-h3">Author's Note：场外的导演</a></li>
+                <li><a href="#an-l1" class="toc-h3">形式一：常驻导演笔记（L1）</a></li>
+                <li><a href="#an-l2l3" class="toc-h3">形式二：动态导演指令（L2/L3）</a></li>
+                <li><a href="#an-timeline" class="toc-h3">用年份维度看剧情推进</a></li>
+                <li><a href="#problem3">第三个问题：如何控制导演的影响力？</a></li>
+                <li><a href="#positional-effect" class="toc-h3">利用 LLM 的"注意力衰减"</a></li>
+                <li><a href="#depth-param" class="toc-h3">Depth 参数</a></li>
+                <li><a href="#depth-example" class="toc-h3">同一条指令，不同 depth 的效果</a></li>
+                <li><a href="#full-collab">完整的协作：时间 × Author's Note × Depth</a></li>
+                <li><a href="#summary">总结：三层递进</a></li>
+                <li><a href="#limitations">已知局限与开放问题</a></li>
+            </ul>
+        </aside>
+
+        <!-- 右侧正文 -->
+        <div class="article-main">
+            <article class="article">
+                <header class="article-header">
+                    <h1 class="article-title">构建沉浸世界的智能 NPC（二）Context Assembly &amp; Author's Note</h1>
+                    <div class="article-meta">
+                        2026-03-27 · <span class="tag">AI</span> <span class="tag">游戏开发</span> <span class="tag">NPC对话</span> <span class="tag">上下文工程</span>
+                    </div>
+                </header>
+
+                <div class="article-content">
+                    <blockquote>
+                        <p><strong>核心前提</strong>：在自然语言模型（LLM）驱动的 NPC 对话中，一切都是基于上下文工程。LLM 没有记忆、没有状态、没有情感——它只能看到你这一次喂给它的文本（即"上下文"），然后基于这段文本生成回复。所以，要让 NPC "知道"什么、"关注"什么、"紧张"什么，唯一的办法就是把对应的信息放进上下文里，并且放在合适的位置上。本文讨论的所有机制——时间、Author's Note、Depth——本质上都是在回答同一个问题：<strong>如何组装这段上下文，才能让 AI 表现得像一个活人？</strong></p>
+                    </blockquote>
+
+                    <blockquote>
+                        <p><strong>前置知识</strong>：本文涉及 AI 对话系统中的几个概念——Persona（角色卡）、世界书（World Book）、上下文编排（Context Orchestration）。你不需要深入了解它们的实现，只需知道它们是 AI NPC 对话系统的基本组件。</p>
+                    </blockquote>
+
+                    <hr>
+
+                    <h2 id="problem1">第一个问题：静止的世界没有体验</h2>
+
+                    <p>我们有一份跨越 500 年的剧本。不同种族的兴衰、战争的爆发与终结——所有事件都写好了，时间线清清楚楚。</p>
+
+                    <p>但当玩家进入游戏，他看到的是什么？</p>
+
+                    <p><strong>一个凝固在"此刻"的世界。</strong></p>
+
+                    <p>酒馆里的艾琳娜是个幽灵，她"死了很久"。铁匠说"以前打过仗"。酒保在擦杯子。所有 NPC 都像博物馆的蜡像——他们有各自的故事背景，但这些背景只是一张静态的说明牌。</p>
+
+                    <blockquote>
+                        <p><strong>玩家</strong>：你在这里待了多久了？</p>
+                        <p><strong>艾琳娜</strong>：「很久了......我已经记不清了。」</p>
+                    </blockquote>
+
+                    <p>这没有问题。但如果玩家第二天来、第三天来、一个月后来，艾琳娜的回答还是一样的——"很久了"。她的世界没有在流动。</p>
+
+                    <p>因为体验的本质是<strong>共同经历</strong>。电影之所以好看，是因为观众跟着角色一起经历了两个小时的起承转合。但在一个静止的世界里，玩家和 NPC 之间不可能建立共同经历。</p>
+
+                    <hr>
+
+                    <h3 id="time-solution">解决方案：引入时间，让世界流动起来</h3>
+
+                    <h3 id="time-calendar">1. 给游戏世界一套历法</h3>
+
+                    <p>游戏有自己的纪年。玩家进入游戏时，是<strong>第 500 年</strong>。时间会随着游戏推进而流动——一天天过去，年份在累积。</p>
+
+                    <ul>
+                        <li><strong>过去是有坐标的</strong>：提弗林入侵发生在第 450 年，不是"很久以前"</li>
+                        <li><strong>未来是可以到来的</strong>：如果剧本写了第 600 年秘境苏醒，那么游戏时间到了第 600 年，它就会苏醒</li>
+                        <li><strong>每个 NPC 的知识边界由出生年份决定</strong></li>
+                    </ul>
+
+                    <h3 id="time-knowledge">2. 时间决定了"谁知道什么"</h3>
+
+                    <p>这是最关键的设计：<strong>时间是角色记忆的唯一凭证。</strong></p>
+
+                    <table>
+                        <thead><tr><th>NPC</th><th>出生年份</th><th>知道的事</th><th>不知道的事</th></tr></thead>
+                        <tbody>
+                            <tr><td>铁匠</td><td>第 450 年</td><td>提弗林入侵（亲历）</td><td>第 450 年之前的上古秘辛</td></tr>
+                            <tr><td>艾琳娜</td><td>第 229 年（死于第 250 年）</td><td>精灵王国鼎盛期、上古精灵的传说</td><td>提弗林入侵（她死后 200 年才发生）</td></tr>
+                            <tr><td>老妖怪</td><td>第 100 年</td><td>过去 400 年的所有事</td><td>第 100 年之前的远古纪元</td></tr>
+                            <tr><td>酒保</td><td>第 470 年</td><td>提弗林入侵的后果、当下的世界格局</td><td>战争的具体过程（他没亲历）</td></tr>
+                        </tbody>
+                    </table>
+
+                    <p>同样一个问题——"提弗林入侵是怎么回事？"——四个 NPC 会给出完全不同的答案：</p>
+
+                    <blockquote>
+                        <p><strong>铁匠</strong>（亲历者）：「第 450 年......我那年才刚出师。提弗林的军队从北方来的时候，我连一把像样的剑都打不出来。」</p>
+                        <p><strong>艾琳娜</strong>（死于入侵前 200 年）：「提弗林？入侵？......什么时候的事？我活着的时候，精灵王国还是大陆上最强盛的国度。」</p>
+                        <p><strong>老妖怪</strong>（全都知道）：「第 450 年？哼，那不过是这片大陆的又一次轮回。第 200 年精灵族驱逐矮人的时候，他们也没想到自己有一天会被驱逐。」</p>
+                        <p><strong>酒保</strong>（只知道后果）：「我只知道那场战争让半个大陆变成了废墟。我出生的时候，战争已经结束二十年了，但北境的城镇还是一片残垣。」</p>
+                    </blockquote>
+
+                    <p><strong>这就是时间带来的第一层价值：世界观不再是所有人共享的百科全书，而是每个角色基于自身生命经历的独特视角。</strong></p>
+
+                    <h3 id="time-hooks">3. 在剧本中安排时间钩子</h3>
+
+                    <p>有了时间系统，编剧就可以在时间线上"埋钩子"——在未来的某个时间点，安排事件发生。</p>
+
+<pre><code>游戏时间线（跨越数百年）：
+
+第100年 ── 荒芜秘境被远古巫师封印，埋入地下
+第229年 ── 艾琳娜出生
+第250年 ── 艾琳娜被杀，成为幽灵
+第450年 ── 提弗林入侵精灵王国
+第500年 ── 玩家进入游戏 ←── 当前时间点
+第600年 ── 秘境封印到期，远古邪物苏醒 ←── 未来钩子</code></pre>
+
+                    <p><strong>钩子不是在游戏代码里硬编码的事件触发器。</strong> 它写在世界书里，带有时间约束。每条世界书条目有一个 <code>timeConstraint</code> 字段，标注生效的起止年份。上下文编排模块在组装 AI 输入时，会用当前的游戏年份做过滤——不在生效范围内的条目不会被注入上下文。</p>
+
+                    <p><strong>这就是时间的第二层价值：编剧可以在时间线上精确地布局叙事节奏，让世界观随着时间"自然生长"，而不是靠触发器硬切。</strong></p>
+
+                    <hr>
+
+                    <h3 id="time-power">用一句对话看时间的力量</h3>
+
+                    <blockquote>
+                        <p><strong>玩家</strong>：你在这个酒馆待了多久了？</p>
+                        <p><strong>艾琳娜</strong>：「多久？......第 250 年，我死在这里。现在是第 500 年。你自己算。」<br>
+                        <em>（翻了个白眼）</em><br>
+                        「250 年。这个数字够大了吗？够你觉得同情了吗？别费心了——你还没出生的时候，我就已经厌倦了同情。」</p>
+                    </blockquote>
+
+                    <p>她说的是"第 250 年"和"第 500 年"，不是"很久了"。<strong>时间有了坐标，她的存在就有了重量。</strong></p>
+
+                    <p>而更关键的是——提弗林入侵发生在第 450 年，艾琳娜死于第 250 年。<strong>她根本不知道提弗林入侵这件事</strong>，也不知道酒保是提弗林。这颗定时炸弹不是刻意设计的——它是时间系统的<strong>天然产物</strong>。</p>
+
+                    <p>但这个定时炸弹什么时候引爆、怎么引爆？时间系统管不了这件事——它只负责"世界走到了哪里"，不负责"NPC 该做什么"。</p>
+
+                    <p><strong>世界需要一个导演。</strong></p>
+
+                    <hr>
+
+                    <h2 id="problem2">第二个问题：谁来引导玩家？</h2>
+
+                    <h3 id="author-note">Author's Note：场外的导演</h3>
+
+                    <p>在戏剧表演中有一个角色叫<strong>场外导演</strong>（Stage Director）。演员在台上即兴表演，导演不上台，但他会在幕后通过耳麦给演员提示。</p>
+
+                    <p><strong>Author's Note 就是我们系统中的这个场外导演。</strong> 它不是 NPC 的台词，不是世界观设定，不是记忆——它是一条写给 AI 的舞台指示，告诉 AI："在当前这个情境下，你应该把对话往什么方向引导。"</p>
+
+                    <p>Author's Note 被"伪装"成对话历史的一部分，插入到对话轮次之间。AI 不会意识到这是一条后来注入的导演指令，它只会自然地受到影响。而它插入的<strong>具体位置</strong>——离用户最新消息有多近——就是 <strong>depth 参数</strong>。</p>
+
+                    <h3 id="an-l1">形式一：写在角色卡里的常驻导演笔记（L1）</h3>
+
+                    <p>编剧在创作角色时就写好的——只要没有更紧急的指令覆盖，这条笔记就一直在 AI 的上下文中。</p>
+
+<pre><code>{
+  "authorNote": "【暗线】艾琳娜偶尔会用意念在空气中写字，记录酒馆里发生的事，
+    写完就消散。她不知道自己在做这件事——这是她死后无意识保留的习惯。
+    如果玩家注意到这个现象，不要主动承认，先装作什么都没发生。",
+  "authorNoteDepth": 4,
+  "authorNoteEnabled": true
+}</code></pre>
+
+                    <p>L1 笔记的特点是<strong>轻柔</strong>：它不要求 AI 立刻做什么，而是让 AI "知道有这回事"，在合适的时机自然地让它浮现。</p>
+
+                    <blockquote>
+                        <p><strong>玩家</strong>：等等......你手指刚才是不是在动？好像在写什么？</p>
+                        <p><strong>艾琳娜</strong>：「......什么？我的手指？」<br>
+                        <em>（低头看了看自己的手，手指确实在微微颤动）</em><br>
+                        「......没有。你看错了。这里光线本来就不好。」</p>
+                    </blockquote>
+
+                    <p><strong>L1 的本质是给角色一个自己不知道的行为模式或秘密</strong>，让 AI 在日常对话中不主动暴露、但被玩家发现时合理反应。</p>
+
+                    <h3 id="an-l2l3">形式二：运行时动态注入的导演指令（L2/L3）</h3>
+
+                    <p>当游戏中发生了重要事件，任务系统会实时覆盖 Author's Note：</p>
+
+<pre><code>当玩家发现「酒保是提弗林的证据」时：
+  设置 艾琳娜 的 Author's Note =
+    "【剧情转折】玩家发现了酒保可能是提弗林的证据。
+     你还不知道这件事，也不知道提弗林在第450年入侵了精灵王国。
+     你的反应取决于玩家怎么告诉你：
+     - 如果玩家直接说出真相，你会困惑；
+     - 当玩家解释第450年发生了什么，你才会真正崩溃；
+     - 崩溃的核心是'我死后族人被屠杀，凶手后代就在我身边站了50年'。"
+  设置 depth = 2  // 250年来最大的情感冲击</code></pre>
+
+                    <table>
+                        <thead><tr><th>级别</th><th>何时使用</th><th>目的</th><th>例子</th></tr></thead>
+                        <tbody>
+                            <tr><td>L1</td><td>角色创建时写好</td><td>埋伏笔、定暗线</td><td>"她会无意识写字"</td></tr>
+                            <tr><td>L2</td><td>任务进度变化时注入</td><td>引导玩家下一步</td><td>"引导玩家去东塔"</td></tr>
+                            <tr><td>L3</td><td>紧急事件触发</td><td>立刻改变行为模式</td><td>任务中催促玩家撤离</td></tr>
+                        </tbody>
+                    </table>
+
+<pre><code>编剧预埋伏笔 ──→ L1（常驻，轻柔，等待触发）
+                        ↑ 被覆盖
+任务系统推进剧情 ──→ L2（动态，明确，引导方向）
+                        ↑ 被覆盖
+紧急事件爆发 ──→ L3（即时，强力，改变行为模式）
+                        ↓ 事件结束后自动回落到 L2 或 L1</code></pre>
+
+                    <h3 id="an-timeline">用年份维度看 Author's Note 如何推进艾琳娜的剧情线</h3>
+
+<pre><code>第500年 春 ── L1生效："偶尔无意识写字，不知道提弗林入侵"
+    │         玩家闲聊，艾琳娜是个有趣的毒舌幽灵，偶尔有奇怪举动
+    │
+第500年 夏 ── 玩家帮酒保完成任务，获得东塔钥匙
+    │         → L2覆盖："注意到玩家拿到钥匙，引导去东塔"
+    │
+第500年 秋 ── 玩家在东塔发现信件，揭示酒保身份
+    │         → L2覆盖："根据玩家的告知方式展现不同反应"
+    │
+第500年 冬 ── 事件余波
+    │         → L2覆盖："你已经知道了真相，但还没决定怎么面对酒保"
+    ▼
+第501年 ── 新的故事篇章开始......</code></pre>
+
+                    <hr>
+
+                    <h2 id="problem3">第三个问题：如何控制导演的影响力？</h2>
+
+                    <h3 id="positional-effect">利用 LLM 的"注意力衰减"</h3>
+
+                    <p>LLM 在处理上下文时，不是对所有内容一视同仁的。它有三种偏向：</p>
+
+                    <ul>
+                        <li><strong>首因效应</strong>：开头的信息（通常是 System Prompt / 角色设定）有较强的影响力</li>
+                        <li><strong>近因效应</strong>：靠近用户最新消息的信息影响力最强——因为 AI"刚刚看到"</li>
+                        <li><strong>中间遗忘</strong>：中间的大段内容，AI 可能只是"扫了一眼"</li>
+                    </ul>
+
+                    <p><strong>Author's Note 正是利用了这个机制。</strong></p>
+
+                    <h3 id="depth-param">Depth 参数：控制"导演的声音离演员有多远"</h3>
+
+<pre><code>depth = 1（紧贴用户消息）：
+messages: [sys, u, a, u, a, u, a, 【Author's Note】, u_latest]
+                                                      ↑
+                                        AI最后看到的就是这条指令
+                                        → 影响力极强，几乎会被"执行"
+
+depth = 4（隔了几轮对话）：
+messages: [sys, u, a, 【Author's Note】, u, a, u, a, u_latest]
+                            ↑
+                  被几轮对话"淹没"了
+                  → 影响力温和，AI"知道但不急着做"
+
+depth = 8（很远）：
+messages: [sys, 【Author's Note】, u, a, u, a, u, a, u, a, u_latest]
+                    ↑
+          几乎沉到上下文底部
+          → 影响力微弱，AI"好像记得有这么回事"</code></pre>
+
+                    <table>
+                        <thead><tr><th>级别</th><th>depth</th><th>导演的声音</th><th>效果</th></tr></thead>
+                        <tbody>
+                            <tr><td>L1（伏笔）</td><td>4</td><td>像排练厅白板上的备忘录</td><td>AI 知道这回事，但不会每句话都围绕它</td></tr>
+                            <tr><td>L2（引导）</td><td>2</td><td>像导演通过耳麦轻声提示</td><td>AI 会主动提及，但不会生硬地执行</td></tr>
+                            <tr><td>L3（紧急）</td><td>1</td><td>像导演在耳边大喊</td><td>AI 的行为会被立刻改变</td></tr>
+                        </tbody>
+                    </table>
+
+                    <h3 id="depth-example">一个具体的例子：同一条 Author's Note，不同 depth 的效果</h3>
+
+                    <p>假设 Author's Note 内容是：<strong>"引导玩家去东塔"</strong></p>
+
+                    <p><strong>depth = 4（伏笔）</strong>：</p>
+                    <blockquote>
+                        <p><strong>玩家</strong>：今天天气不错。</p>
+                        <p><strong>艾琳娜</strong>：「不错？对活人来说也许吧。我已经感受不到温度了——不过，看着阳光透过窗户的样子，倒是......挺怀念的。」</p>
+                    </blockquote>
+                    <p>AI 完全按照玩家的话题在聊天气，Author's Note 的"去东塔"被自然地忽略了。</p>
+
+                    <p><strong>depth = 2（引导）</strong>：</p>
+                    <blockquote>
+                        <p><strong>玩家</strong>：今天天气不错。</p>
+                        <p><strong>艾琳娜</strong>：「嗯......确实不错。这种天气，去东塔那边走走也挺好的。听说塔顶能看到整个镇子。」</p>
+                    </blockquote>
+                    <p>AI 先回应了玩家的话题，然后<strong>自然地</strong>把话题引向东塔。这就是 depth=2 的微妙之处：<strong>AI 有意识地往那个方向靠，但不强求。</strong></p>
+
+                    <p><strong>depth = 1（紧急）</strong>——适用于任务剧情中的紧迫场景，AI 几乎会直接执行指令。</p>
+
+                    <p>三个 depth 级别不是为了给开发者三个按钮，而是为了模拟一个角色对不同事情的不同关注程度。</p>
+
+                    <hr>
+
+                    <h2 id="full-collab">完整的协作：时间 × Author's Note × Depth</h2>
+
+                    <p><strong>第 500 年春：日常闲聊</strong>（L1, depth=4）</p>
+                    <blockquote>
+                        <p><strong>玩家</strong>：你对酒保怎么看？</p>
+                        <p><strong>艾琳娜</strong>：「酒保？他还行。不多话，酒调得马马虎虎，至少不会主动来烦我。在这个酒馆待了 250 年，能有一个不烦人的同事已经很难得了。」</p>
+                    </blockquote>
+
+                    <p><strong>第 500 年夏：玩家获得东塔钥匙</strong>（L2, depth=2）</p>
+                    <blockquote>
+                        <p><strong>玩家</strong>：我帮酒保搞定了那件事。</p>
+                        <p><strong>艾琳娜</strong>：「哦？那他给了你什么好处？......等等。」<br>
+                        <em>（目光锁定在玩家腰间）</em><br>
+                        「你身上那股气息......那把钥匙，你是从哪里得到的？」</p>
+                    </blockquote>
+
+                    <p><strong>第 500 年秋：逃出东塔</strong>（L3, depth=1）——东塔正在坍塌的紧急任务场景</p>
+                    <blockquote>
+                        <p><strong>玩家</strong>：我想再找找还有没有别的线索......</p>
+                        <p><strong>艾琳娜</strong>：「不要找了！！你听到了吗——石头在裂！整座塔在——你现在就走！信件已经拿到了，别的都不重要——」<br>
+                        <em>（声音在震颤中断断续续）</em><br>
+                        「求你了，出去。我不想再看着一个人死在这里。」</p>
+                    </blockquote>
+
+                    <p><strong>这就是 depth 机制的精髓：它不是一个开关（有/无），而是一个旋钮（0-10）。</strong> 转到最大时，导演的声音盖过了一切；转到最小时，导演的声音只是背景里的一丝低语。</p>
+
+                    <hr>
+
+                    <h2 id="summary">总结：三层递进</h2>
+
+                    <p>三层机制各司其职：</p>
+                    <ul>
+                        <li><strong>时间</strong>回答的是"世界走到了哪里"</li>
+                        <li><strong>Author's Note</strong>回答的是"NPC 现在该做什么"</li>
+                        <li><strong>Depth</strong>回答的是"这件事有多急"</li>
+                    </ul>
+
+                    <p>回头看开头那个凝固在"此刻"的世界——所有 NPC 说着不变的台词，玩家走到哪都是同一副布景。加入这三层机制后，世界开始转了：NPC 知道现在是什么年代，导演在合适的时机推一把，而推的力度由 depth 自动调节。</p>
+
+                    <p>这不是某个角色的专属方案。只要你的游戏中有<strong>时间流逝</strong>和<strong>NPC 对话</strong>，这套 <strong>时间系统 + Author's Note + Depth</strong> 的组合就能复用。</p>
+
+                    <p>我们追求的体验也很明确：<strong>玩家不再是在一个静态的展览馆里点击对话框，而是走进了一个正在运转的世界。</strong></p>
+
+                    <hr>
+
+                    <h2 id="limitations">已知局限与开放问题</h2>
+
+                    <ul>
+                        <li><strong>引导的复读机风险</strong>：当 L2 指令长时间生效而玩家反复拒绝时，NPC 可能每次都尝试引向同一话题。目前的做法是在 Author's Note 中加入条件分支，但这增加了复杂度。</li>
+                        <li><strong>L1 伏笔被覆盖后的恢复</strong>：L2/L3 覆盖 L1 后，如果玩家恰好发现了 L1 相关线索，AI 可能无法给出预期反应——因为那条信息当前不在上下文中。</li>
+                        <li><strong>多 NPC 同时引导时的冲突</strong>：如果两个 NPC 同时有 L2 指令引导玩家去不同方向，需要任务系统在更高层面做协调。</li>
+                        <li><strong>depth 的效果依赖模型</strong>：不同 LLM 对位置效应的敏感度不同，depth 的具体数值需要根据模型做调优。</li>
+                    </ul>
+
+                </div>
+            </article>
+
+            <div class="article-nav">
+                <a href="intelligent-npc-architecture.html">← 上一篇</a>
+                <a href="../index.html">返回首页 →</a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2026 Juehui's Thoughts · Hosted on <a href="https://pages.github.com" target="_blank">GitHub Pages</a></p>
+        </div>
+    </footer>
+
+    <script src="../js/toc.js"></script>
+</body>
+</html>
