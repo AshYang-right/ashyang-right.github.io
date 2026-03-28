@@ -246,11 +246,12 @@ img {
     background: transparent;
     border: none;
     border-bottom: 1px solid var(--color-border-light);
-    border-radius: 0;
-    padding: 28px 0;
+    border-radius: var(--radius-md);
+    padding: 28px 24px;
     margin-bottom: 0;
     transition: all 0.25s ease;
     cursor: pointer;
+    border-left: 3px solid transparent;
 }
 
 .post-card:last-child {
@@ -258,9 +259,14 @@ img {
 }
 
 .post-card:hover {
-    box-shadow: none;
-    border-color: var(--color-border);
-    transform: none;
+    background: var(--color-accent-bg);
+    border-left-color: var(--color-accent);
+    transform: translateX(4px);
+}
+
+.post-card:active {
+    transform: translateX(2px);
+    opacity: 0.85;
 }
 
 .post-card-title {

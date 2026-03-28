@@ -55,7 +55,7 @@
             }).join("");
 
             return (
-                '<article class="post-card">' +
+                '<article class="post-card" data-href="posts/' + post.slug + '.html">' +
                     '<h2 class="post-card-title"><a href="posts/' + post.slug + '.html">' + post.title + '</a></h2>' +
                     '<div class="post-card-meta">' + post.date + '</div>' +
                     '<p class="post-card-summary">' + post.summary + '</p>' +
@@ -65,6 +65,13 @@
         }).join("");
 
         listEl.innerHTML = html;
+
+        // 整个卡片可点击跳转
+        listEl.querySelectorAll(".post-card[data-href]").forEach(function (card) {
+            card.addEventListener("click", function () {
+                window.location.href = this.getAttribute("data-href");
+            });
+        });
     }
 
     renderFilter();
