@@ -4,6 +4,13 @@
  */
 const POSTS = [
     {
+        slug: "claude-code-context-compression",
+        title: "Claude Code 是如何进行上下文压缩的？（源码学习）",
+        date: "2026-03-31",
+        summary: "深度解析 Claude Code 的四层递进上下文压缩机制——从微压缩的缓存感知设计，到 Session Memory 的后台笔记系统，再到 Full Compact 的 LLM 摘要生成，最后是 Snip 的物理删除。一套精密的系统，在信息保留、成本和延迟之间做出精妙的工程权衡。",
+        tags: ["AI", "源码分析", "上下文工程", "Claude Code"]
+    },
+    {
         slug: "context-assembly-author-note",
         title: "构建沉浸世界的智能 NPC（二）Context Assembly & Author's Note",
         date: "2026-03-27",
