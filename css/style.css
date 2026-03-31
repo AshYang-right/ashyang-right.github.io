@@ -191,6 +191,42 @@ img {
     box-shadow: var(--shadow-sm);
 }
 
+/* ===== Tag Filter ===== */
+.tag-filter {
+    margin-top: 28px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag-filter-btn {
+    display: inline-block;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-family: var(--font-serif);
+    font-size: 0.825rem;
+    font-weight: 400;
+    padding: 5px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tag-filter-btn:hover {
+    color: var(--color-text);
+    border-color: var(--color-accent-light);
+    background: var(--color-accent-bg);
+}
+
+.tag-filter-btn.active {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    background: var(--color-accent-bg);
+    font-weight: 600;
+}
+
 /* ===== Divider ===== */
 .header-divider {
     width: 48px;
@@ -207,19 +243,30 @@ img {
 }
 
 .post-card {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    padding: 28px 32px;
-    margin-bottom: 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    padding: 28px 24px;
+    margin-bottom: 0;
     transition: all 0.25s ease;
     cursor: pointer;
+    border-left: 3px solid transparent;
+}
+
+.post-card:last-child {
+    border-bottom: none;
 }
 
 .post-card:hover {
-    box-shadow: var(--shadow-md);
-    border-color: var(--color-border);
-    transform: translateY(-1px);
+    background: var(--color-accent-bg);
+    border-left-color: var(--color-accent);
+    transform: translateX(4px);
+}
+
+.post-card:active {
+    transform: translateX(2px);
+    opacity: 0.85;
 }
 
 .post-card-title {
@@ -343,10 +390,10 @@ img {
 }
 
 .article {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-xl);
-    padding: 48px 48px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 48px 0;
 }
 
 .article-header {
@@ -633,8 +680,8 @@ img {
     }
 
     .article {
-        padding: 28px 24px;
-        border-radius: var(--radius-lg);
+        padding: 20px 0;
+        border-radius: 0;
     }
 
     .article-title {
