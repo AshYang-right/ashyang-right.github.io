@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Claude Code 是如何进行上下文压缩的？（源码学习） - Ash's Blog</title>
+    <title>深度解析 Claude Code 的上下文压缩机制 - Ash's Blog</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,600&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
@@ -53,7 +53,10 @@
                 <li><a href="#comparison">Session Memory vs Full Compact</a></li>
                 <li><a href="#manual-compact">手动 /compact 指令</a></li>
                 <li><a href="#philosophy">核心设计哲学</a></li>
-                <li><a href="#conclusion">总结</a></li>
+                <li><a href="#conclusion">总结与实用建议</a></li>
+                <li><a href="#conclusion-summary" class="toc-h3">系统总结</a></li>
+                <li><a href="#conclusion-backup" class="toc-h3">本地完整备份</a></li>
+                <li><a href="#conclusion-compact-vs-clear" class="toc-h3">/compact vs /clear</a></li>
                 <li><a href="#appendix-a">附录A：Session Memory 更新提示词</a></li>
                 <li><a href="#appendix-b">附录B：Full Compact 压缩提示词</a></li>
             </ul>
@@ -63,13 +66,20 @@
         <div class="article-main">
             <article class="article">
                 <header class="article-header">
-                    <h1 class="article-title">Claude Code 是如何进行上下文压缩的？（源码学习）</h1>
+                    <h1 class="article-title">深度解析 Claude Code 的上下文压缩机制</h1>
                     <div class="article-meta">
                         2026-03-31 · <span class="tag">AI</span> <span class="tag">源码分析</span> <span class="tag">上下文工程</span> <span class="tag">Claude Code</span>
                     </div>
                 </header>
 
                 <div class="article-content">
+
+                    <blockquote>
+                        <p><strong>编者注：读完源码后的三个意外发现——</strong></p>
+                        <p>1. <strong>Anthropic 居然在帮用户省钱？</strong> Claude Code 在后台偷偷用异步笔记系统记录对话要点，压缩时直接读笔记、不调 LLM，省掉了最贵的那一次 API 调用。子代理还共享主对话的 prompt cache，input token 只付一折。万万没想到，最烧钱的 AI 公司在代码层面抠得这么细。</p>
+                        <p>2. <strong>你每天在用的 <code>/compact</code> 可能根本没走 Full Compact。</strong> 如果你不带参数直接敲 <code>/compact</code>，它大概率走的是 Session Memory 路径——毫秒级完成、零额外 API 费用。只有带自定义指令（如 <code>/compact 侧重错误日志</code>）时才会真正调 LLM 做全量压缩。</p>
+                        <p>3. <strong>能不 <code>/clear</code> 就别 <code>/clear</code>。</strong> <code>/compact</code> 是压缩行李继续旅行，完整对话历史保留在本地，AI 随时能翻旧账；<code>/clear</code> 是扔掉所有行李重新出发，AI 再也找不回之前的上下文。</p>
+                    </blockquote>
 
                     <h2 id="intro">引言：为什么需要上下文压缩？</h2>
 
@@ -156,7 +166,7 @@
                         <li><strong>工具调用门槛</strong>：距上次记笔记后，工具调用 ≥ 3 次；或者 AI 最后一轮没调工具（自然对话断点）</li>
                     </ol>
 
-                    <p>满足条件后，系统会 <strong>fork 一个子代理</strong>（不是直接用主对话的 AI），给它发一段精心设计的提示词。</p>
+                    <p>满足条件后，系统会 <strong>fork 一个子代理</strong>（不是直接用主对话的 AI），给它发一段精心设计的提示词（完整原文见 <a href="#appendix-a">附录A</a>）。</p>
 
                     <p>这段提示词的核心要求是：</p>
                     <ul>
@@ -216,6 +226,7 @@
                     <p>当上下文快满需要压缩时：</p>
 
                     <ol>
+                        <li><strong>等待笔记提取完成</strong>——如果后台正在记笔记，先等它完成（最多等 15 秒，超过 1 分钟的过时任务直接跳过），确保使用最新的笔记内容</li>
                         <li>从磁盘读取笔记文件（毫秒级，零 API 费用）</li>
                         <li>根据书签找到分界点——书签之前的消息"笔记已覆盖"，可以删</li>
                         <li>书签之后的消息必须保留（笔记没覆盖）</li>
@@ -271,7 +282,7 @@
                     <p>具体流程：</p>
                     <ol>
                         <li><strong>先跑微压缩</strong>——减少发给 LLM 的 token 量（清空旧工具结果）</li>
-                        <li><strong>fork 子代理</strong>，发送压缩提示词</li>
+                        <li><strong>fork 子代理</strong>，发送压缩提示词（完整原文见 <a href="#appendix-b">附录B</a>）</li>
                         <li><strong>子代理返回摘要</strong>——包含 <code>&lt;analysis&gt;</code> 草稿区和 <code>&lt;summary&gt;</code> 正文</li>
                         <li><strong>代码后处理</strong>——删除 <code>&lt;analysis&gt;</code>、格式化 <code>&lt;summary&gt;</code></li>
                         <li><strong>代码重建工作环境</strong>——并行生成附件（文件、计划、技能、工具列表等）</li>
@@ -280,7 +291,7 @@
 
                     <h3 id="layer3-prompt">生成摘要的提示词设计</h3>
 
-                    <p>提示词经过精心设计，有几个值得注意的点：</p>
+                    <p>提示词经过精心设计，有几个值得注意的点（完整原文见 <a href="#appendix-b">附录B</a>）：</p>
 
                     <p><strong>反复强调不许调工具：</strong></p>
 
@@ -465,7 +476,7 @@ if (feature('HISTORY_SNIP')) {
                         <li><strong>图片剥离</strong>——先把消息中的图片替换为 <code>[image]</code> 文本标记，避免压缩请求本身撑爆上下文</li>
                         <li><strong>技能附件剥离</strong>——移除 <code>skill_discovery</code>/<code>skill_listing</code> 类型的附件（压缩后会重新注入）</li>
                         <li><strong>Pre-Compact hooks</strong>——执行用户配置的预压缩钩子，可能产生额外的自定义指令</li>
-                        <li><strong>fork 子代理生成摘要</strong>——使用精心设计的提示词，要求先打草稿再写正文</li>
+                        <li><strong>fork 子代理生成摘要</strong>——使用精心设计的提示词（见<a href="#appendix-b">附录B</a>），要求先打草稿再写正文</li>
                         <li><strong>prompt-too-long 重试</strong>——如果压缩请求本身太长，会从最老的消息轮次开始逐步截断，最多重试 3 次</li>
                         <li><strong>草稿剥离</strong>——<code>formatCompactSummary()</code> 删除 <code>&lt;analysis&gt;</code> 只保留 <code>&lt;summary&gt;</code></li>
                         <li><strong>工作环境重建</strong>——并行生成文件附件、计划、技能、工具列表、代理列表、MCP 指令</li>
@@ -518,13 +529,52 @@ if (feature('HISTORY_SNIP')) {
 
                     <hr>
 
-                    <h2 id="conclusion">总结</h2>
+                    <h2 id="conclusion">总结与实用建议</h2>
+
+                    <h3 id="conclusion-summary">系统总结</h3>
 
                     <p>Claude Code 的上下文压缩不是一个简单的"砍掉旧消息"，而是一个<strong>四层递进、缓存感知、成本敏感</strong>的精密系统。它的核心思想可以用一句话概括：</p>
 
                     <p><strong>在有限的上下文窗口里塞尽可能多的有效信息，同时尽量不破坏 prompt cache 以节省成本。</strong></p>
 
                     <p>这套系统对 Agent 开发者的最大启示是：<strong>上下文管理不是事后补丁，而是需要从第一天就纳入架构设计的核心问题。</strong> 当你的 Agent 需要处理长会话时，你面对的不只是"删什么"的问题，还有"什么时候删"、"删了之后怎么恢复工作环境"、"怎么在信息保留和成本之间取得平衡"等一系列系统性问题。Claude Code 的实现提供了一个工程化程度极高的参考答案。</p>
+
+                    <h3 id="conclusion-backup">被压缩的上下文在本地有完整备份</h3>
+
+                    <p>一个容易被忽略但非常重要的事实是：<strong>你和 AI 的每一轮完整对话都在本地有持久化备份。</strong></p>
+
+                    <p>每个会话的完整消息记录以 JSONL 格式写在本地磁盘上：</p>
+
+<pre><code>~/.claude/projects/&lt;项目路径哈希&gt;/&lt;session-id&gt;.jsonl</code></pre>
+
+                    <p>压缩<strong>不会修改这个文件</strong>——它只替换内存中的消息数组。Transcript 文件是追加写入的，旧消息永远不会被删除。所有工具调用、执行结果、AI 的推理过程都完整保留。</p>
+
+                    <p>压缩后，系统会在摘要消息中用一句纯文本告诉 AI 这个文件的路径：</p>
+
+<pre><code>If you need specific details from before compaction (like exact code
+snippets, error messages, or content you generated), read the full
+transcript at: /Users/xxx/.claude/projects/abc123/session-456.jsonl</code></pre>
+
+                    <p>如果 AI 发现摘要里的信息不够用（比如需要某个精确的代码片段），它可以自己用 FileRead 工具去读这个文件来找回细节。没有自动读取、没有索引、没有搜索，完全靠 AI 自行判断"我需不需要去翻旧记录"。</p>
+
+                    <h3 id="conclusion-compact-vs-clear">/compact vs /clear：能不 clear 就别 clear</h3>
+
+                    <table>
+                        <thead><tr><th></th><th><code>/compact</code></th><th><code>/clear</code></th></tr></thead>
+                        <tbody>
+                            <tr><td><strong>上下文</strong></td><td>压缩为摘要/笔记，保留核心信息</td><td>彻底清空，一条不留</td></tr>
+                            <tr><td><strong>Transcript</strong></td><td>完整保留，AI 可以回读</td><td>文件还在，但新 session ID，AI 不知道旧文件路径</td></tr>
+                            <tr><td><strong>笔记文件</strong></td><td>继续使用，下次压缩更快</td><td>文件还在但书签丢了，需要重新积累</td></tr>
+                            <tr><td><strong>Session ID</strong></td><td>不变</td><td>重新生成</td></tr>
+                            <tr><td><strong>工作状态</strong></td><td>文件缓存、计划、技能都重建</td><td>全部清空重置</td></tr>
+                        </tbody>
+                    </table>
+
+                    <p><code>/compact</code> 相当于"压缩行李继续旅行"——信息被浓缩了，但旅途的记忆还在，随时可以翻阅旧日记（transcript）找回细节。</p>
+
+                    <p><code>/clear</code> 相当于"扔掉所有行李重新出发"——旧的 transcript 文件虽然还在磁盘上，但新会话的 AI 不知道它的存在，无法自动回溯。</p>
+
+                    <p><strong>建议：能用 <code>/compact</code> 就不要用 <code>/clear</code>。</strong> 未来模型支持更大的上下文窗口时，transcript 中保存的完整历史会更有价值——你可以通过让 AI 读取 transcript 文件的方式恢复之前的工作上下文，而不用重新描述整个任务背景。这也是 Claude Code 选择把完整历史持久化到磁盘的深层原因：<strong>当前的上下文窗口限制是暂时的，但对话历史的价值是长期的。</strong></p>
 
                     <hr>
 
@@ -687,15 +737,40 @@ points. In your analysis process:
 
 Your summary should include the following sections:
 
-1. Primary Request and Intent
-2. Key Technical Concepts
-3. Files and Code Sections
-4. Errors and fixes
-5. Problem Solving
-6. All user messages
-7. Pending Tasks
-8. Current Work
-9. Optional Next Step
+1. Primary Request and Intent: Capture all of the user's explicit
+   requests and intents in detail
+2. Key Technical Concepts: List all important technical concepts,
+   technologies, and frameworks discussed.
+3. Files and Code Sections: Enumerate specific files and code sections
+   examined, modified, or created. Pay special attention to the most
+   recent messages and include full code snippets where applicable and
+   include a summary of why this file read or edit is important.
+4. Errors and fixes: List all errors that you ran into, and how you
+   fixed them. Pay special attention to specific user feedback that you
+   received, especially if the user told you to do something differently.
+5. Problem Solving: Document problems solved and any ongoing
+   troubleshooting efforts.
+6. All user messages: List ALL user messages that are not tool results.
+   These are critical for understanding the users' feedback and changing
+   intent.
+7. Pending Tasks: Outline any pending tasks that you have explicitly
+   been asked to work on.
+8. Current Work: Describe in detail precisely what was being worked on
+   immediately before this summary request, paying special attention to
+   the most recent messages from both user and assistant. Include file
+   names and code snippets where applicable.
+9. Optional Next Step: List the next step that you will take that is
+   related to the most recent work you were doing. IMPORTANT: ensure
+   that this step is DIRECTLY in line with the user's most recent
+   explicit requests, and the task you were working on immediately
+   before this summary request. If your last task was concluded, then
+   only list next steps if they are explicitly in line with the users
+   request. Do not start on tangential requests or really old requests
+   that were already completed without confirming with the user first.
+   If there is a next step, include direct quotes from the most recent
+   conversation showing exactly what task you were working on and where
+   you left off. This should be verbatim to ensure there's no drift in
+   task interpretation.
 
 REMINDER: Do NOT call any tools. Respond with plain text only — an
 &lt;analysis&gt; block followed by a &lt;summary&gt; block. Tool calls will be
