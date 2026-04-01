@@ -423,6 +423,35 @@ img {
     vertical-align: 1px;
 }
 
+/* Story Line — 贯穿全文的叙事线高亮块 */
+.article-content .story-line {
+    border-left: 3px solid var(--color-accent);
+    padding: 16px 24px;
+    margin: 24px 0;
+    background: var(--color-accent-bg);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    color: var(--color-text);
+    font-style: normal;
+}
+
+.article-content .story-line p {
+    margin-bottom: 12px;
+}
+
+.article-content .story-line p:last-child {
+    margin-bottom: 0;
+}
+
+.article-content .story-line pre {
+    background: rgba(196, 112, 63, 0.06);
+    color: var(--color-text);
+    border: 1px solid rgba(196, 112, 63, 0.15);
+}
+
+.article-content .story-line pre code {
+    color: var(--color-text);
+}
+
 /* Article Content Typography */
 .article-content {
     font-family: var(--font-serif);
