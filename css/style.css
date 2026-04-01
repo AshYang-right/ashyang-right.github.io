@@ -520,60 +520,77 @@ img {
     color: var(--color-accent);
 }
 
-/* Collapsible code blocks */
-.article-content details {
+/* Collapsible code blocks — 预览式折叠 */
+.code-collapsible {
+    position: relative;
     margin: 24px 0;
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.code-collapsible pre {
+    margin: 0;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
 }
 
-.article-content details summary {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 20px;
-    background: var(--color-bg-warm);
-    color: var(--color-text-secondary);
+.code-collapsible.collapsed pre {
+    max-height: 8.5em; /* ~5 行预览 */
+}
+
+.code-collapsible.collapsed::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 5em;
+    background: linear-gradient(to bottom, rgba(61, 57, 41, 0) 0%, rgba(61, 57, 41, 0.85) 70%, rgba(61, 57, 41, 1) 100%);
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.code-collapsible .collapse-hint {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--color-bg);
     font-family: var(--font-serif);
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    cursor: pointer;
-    user-select: none;
-    list-style: none;
-    transition: all 0.2s ease;
+    letter-spacing: 0.04em;
+    opacity: 0.9;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1;
 }
 
-.article-content details summary::-webkit-details-marker {
-    display: none;
+.code-collapsible:not(.collapsed) .collapse-hint {
+    opacity: 0;
 }
 
-.article-content details summary::before {
-    content: "▶";
-    font-size: 0.7em;
-    transition: transform 0.2s ease;
-    flex-shrink: 0;
+.code-collapsible:not(.collapsed)::after {
+    opacity: 0;
 }
 
-.article-content details[open] summary::before {
-    transform: rotate(90deg);
+.code-collapsible:hover .collapse-hint {
+    opacity: 1;
 }
 
-.article-content details summary:hover {
-    color: var(--color-text);
-    background: var(--color-surface-hover);
+.code-collapsible:not(.collapsed):hover::after {
+    opacity: 1;
+    height: 2.5em;
+    background: linear-gradient(to bottom, rgba(61, 57, 41, 0) 0%, rgba(61, 57, 41, 0.6) 100%);
 }
 
-.article-content details > pre {
-    margin: 0;
-    border-radius: 0;
-    border-top: 1px solid var(--color-border-light);
+.code-collapsible:not(.collapsed) .collapse-hint-text::after {
+    content: "点击收起";
 }
 
-.article-content details > pre code {
-    display: block;
-    max-height: 60vh;
-    overflow-y: auto;
+.code-collapsible.collapsed .collapse-hint-text::after {
+    content: "点击展开完整代码";
 }
 
 .article-content pre {
