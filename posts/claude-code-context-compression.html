@@ -483,8 +483,11 @@
 
                     <p>以下是后台子代理更新笔记时收到的完整提示词（源码位于 <code>src/services/SessionMemory/prompts.ts</code>）。<code>{{currentNotes}}</code> 和 <code>{{notesPath}}</code> 会被替换为笔记文件的当前内容和路径：</p>
 
-                    <details>
-                        <summary>Session Memory 更新提示词（点击展开）</summary>
+                    <div class="code-collapsible collapsed">
+                        <div class="collapse-bar">
+                            <div class="collapse-bar-dots"><span></span><span></span><span></span></div>
+                            <button class="collapse-toggle" onclick="toggleCode(this)"><i class="toggle-icon">▾</i> <span class="toggle-label">展开完整提示词</span></button>
+                        </div>
 <pre><code>IMPORTANT: This message and these instructions are NOT part of the actual
 user conversation. Do NOT include any references to "note-taking",
 "session notes extraction", or these update instructions in the notes content.
@@ -561,7 +564,10 @@ headers or italic _section descriptions_.</code></pre>
                     <p>笔记的默认模板（9 个章节）如下：</p>
 
                     <div class="code-collapsible collapsed">
-                        <span class="collapse-hint"><span class="collapse-hint-text"></span></span>
+                        <div class="collapse-bar">
+                            <div class="collapse-bar-dots"><span></span><span></span><span></span></div>
+                            <button class="collapse-toggle" onclick="toggleCode(this)"><i class="toggle-icon">▾</i> <span class="toggle-label">展开完整模板</span></button>
+                        </div>
 <pre><code># Session Title
 _A short and distinctive 5-10 word descriptive title for the session.
 Super info dense, no filler_
@@ -608,7 +614,10 @@ _Step by step, what was attempted, done? Very terse summary for each step_</code
                     <p>以下是 Full Compact 时发给子代理的完整提示词（源码位于 <code>src/services/compact/prompt.ts</code>）：</p>
 
                     <div class="code-collapsible collapsed">
-                        <span class="collapse-hint"><span class="collapse-hint-text"></span></span>
+                        <div class="collapse-bar">
+                            <div class="collapse-bar-dots"><span></span><span></span><span></span></div>
+                            <button class="collapse-toggle" onclick="toggleCode(this)"><i class="toggle-icon">▾</i> <span class="toggle-label">展开完整提示词</span></button>
+                        </div>
 <pre><code>CRITICAL: Respond with TEXT ONLY. Do NOT call any tools.
 
 - Do NOT use Read, Bash, Grep, Glob, Edit, Write, or ANY other tool.
@@ -765,10 +774,6 @@ rejected and you will fail the task.</code></pre>
                 </div>
             </article>
 
-            <div class="article-nav">
-                <a href="context-assembly-author-note.html">&larr; 上一篇</a>
-                <a href="../index.html">返回首页 &rarr;</a>
-            </div>
         </div>
     </div>
 
@@ -780,27 +785,27 @@ rejected and you will fail the task.</code></pre>
 
     <script src="../js/toc.js"></script>
     <script>
-    // 可折叠代码块：点击切换展开/收起
-    document.querySelectorAll('.code-collapsible').forEach(block => {
-        const pre = block.querySelector('pre');
-        // 记录完整高度
-        const setExpandedHeight = () => {
+    function toggleCode(btn) {
+        var block = btn.closest('.code-collapsible');
+        var pre = block.querySelector('pre');
+        var label = btn.querySelector('.toggle-label');
+        var icon = btn.querySelector('.toggle-icon');
+        if (block.classList.contains('collapsed')) {
             pre.style.maxHeight = pre.scrollHeight + 'px';
-        };
-        // 初始化：折叠状态不设 max-height（由 CSS 控制）
-        block.addEventListener('click', () => {
-            if (block.classList.contains('collapsed')) {
-                setExpandedHeight();
-                block.classList.remove('collapsed');
-            } else {
-                // 先设当前高度，再在下一帧收起，触发过渡动画
-                pre.style.maxHeight = pre.scrollHeight + 'px';
-                requestAnimationFrame(() => {
-                    pre.style.maxHeight = '';
-                    block.classList.add('collapsed');
-                });
-            }
-        });
+            block.classList.remove('collapsed');
+            label.textContent = '收起';
+        } else {
+            pre.style.maxHeight = pre.scrollHeight + 'px';
+            requestAnimationFrame(function() {
+                pre.style.maxHeight = '';
+                block.classList.add('collapsed');
+                label.textContent = btn.dataset.expandLabel || '展开完整代码';
+            });
+        }
+    }
+    // 记录每个按钮的展开文字，方便收起后恢复
+    document.querySelectorAll('.collapse-toggle').forEach(function(btn) {
+        btn.dataset.expandLabel = btn.querySelector('.toggle-label').textContent;
     });
     </script>
 </body>

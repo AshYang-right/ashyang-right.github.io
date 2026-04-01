@@ -72,8 +72,8 @@
     --font-mono: "Source Code Pro", "SF Mono", "Fira Code", "Consolas", monospace;
 
     /* 布局 */
-    --max-width: 1100px;
-    --content-width: 720px;
+    --max-width: 1400px;
+    --content-width: 1080px;
     --toc-width: 220px;
 }
 
@@ -526,12 +526,13 @@ img {
     margin: 24px 0;
     border-radius: var(--radius-md);
     overflow: hidden;
-    cursor: pointer;
 }
 
-.code-collapsible pre {
+.code-collapsible pre,
+.article-content .code-collapsible pre {
     margin: 0;
-    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
 }
 
@@ -539,58 +540,75 @@ img {
     max-height: 8.5em; /* ~5 行预览 */
 }
 
+/* 折叠时底部渐变遮罩 */
 .code-collapsible.collapsed::after {
     content: "";
     position: absolute;
-    bottom: 0;
+    bottom: 36px; /* 留出按钮空间 */
     left: 0;
     right: 0;
-    height: 5em;
-    background: linear-gradient(to bottom, rgba(61, 57, 41, 0) 0%, rgba(61, 57, 41, 0.85) 70%, rgba(61, 57, 41, 1) 100%);
+    height: 4em;
+    background: linear-gradient(to bottom, rgba(61, 57, 41, 0) 0%, rgba(61, 57, 41, 0.92) 100%);
     pointer-events: none;
-    transition: opacity 0.3s ease;
 }
 
-.code-collapsible .collapse-hint {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: var(--color-bg);
+/* 顶部控制栏 */
+.code-collapsible .collapse-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--color-text);
+    padding: 8px 16px;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.code-collapsible .collapse-bar-dots {
+    display: flex;
+    gap: 6px;
+}
+
+.code-collapsible .collapse-bar-dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+}
+
+.code-collapsible .collapse-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     font-family: var(--font-serif);
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    opacity: 0.9;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-    z-index: 1;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 3px 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
 }
 
-.code-collapsible:not(.collapsed) .collapse-hint {
-    opacity: 0;
+.code-collapsible .collapse-toggle:hover {
+    color: var(--color-bg);
+    border-color: rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.08);
 }
 
-.code-collapsible:not(.collapsed)::after {
-    opacity: 0;
+.code-collapsible .collapse-toggle .toggle-icon {
+    font-style: normal;
+    transition: transform 0.3s ease;
+    line-height: 1;
 }
 
-.code-collapsible:hover .collapse-hint {
-    opacity: 1;
+.code-collapsible.collapsed .collapse-toggle .toggle-icon {
+    transform: rotate(0deg);
 }
 
-.code-collapsible:not(.collapsed):hover::after {
-    opacity: 1;
-    height: 2.5em;
-    background: linear-gradient(to bottom, rgba(61, 57, 41, 0) 0%, rgba(61, 57, 41, 0.6) 100%);
-}
-
-.code-collapsible:not(.collapsed) .collapse-hint-text::after {
-    content: "点击收起";
-}
-
-.code-collapsible.collapsed .collapse-hint-text::after {
-    content: "点击展开完整代码";
+.code-collapsible:not(.collapsed) .collapse-toggle .toggle-icon {
+    transform: rotate(180deg);
 }
 
 .article-content pre {
