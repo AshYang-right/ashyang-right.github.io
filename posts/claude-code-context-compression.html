@@ -28,35 +28,35 @@
         <aside class="article-toc">
             <div class="toc-title">目录</div>
             <ul class="toc-list" id="toc-list">
-                <li><a href="#intro">引言：为什么需要上下文压缩？</a></li>
+                <li><a href="#editor-note">编者注：三个意外发现</a></li>
+                <li><a href="#why">为什么需要上下文压缩</a></li>
+                <li><a href="#scenario" class="toc-h3">一个具体的场景</a></li>
                 <li><a href="#architecture">整体架构：四层压缩梯队</a></li>
+                <li><a href="#threshold" class="toc-h3">什么时候算"快满了"</a></li>
+                <li><a href="#pipeline" class="toc-h3">完整的执行流水线</a></li>
                 <li><a href="#layer1">第1层：微压缩（MicroCompact）</a></li>
-                <li><a href="#layer1-path-a" class="toc-h3">路径A：时间过期 → 直接清空</a></li>
+                <li><a href="#layer1-path-a" class="toc-h3">路径A：缓存已冷 → 直接清空</a></li>
                 <li><a href="#layer1-path-b" class="toc-h3">路径B：缓存还热 → cache_edits</a></li>
                 <li><a href="#layer1-limits" class="toc-h3">微压缩的限制</a></li>
+                <li><a href="#layer1-after" class="toc-h3">微压缩之后：够不够？</a></li>
                 <li><a href="#layer2">第2层：会话记忆压缩</a></li>
-                <li><a href="#layer2-notes" class="toc-h3">"笔记"是什么？</a></li>
-                <li><a href="#layer2-update" class="toc-h3">笔记怎么更新？</a></li>
+                <li><a href="#layer2-what" class="toc-h3">什么是 Session Memory</a></li>
+                <li><a href="#layer2-update" class="toc-h3">笔记的更新机制</a></li>
                 <li><a href="#layer2-model" class="toc-h3">子代理的模型与缓存省钱</a></li>
                 <li><a href="#layer2-relation" class="toc-h3">笔记与上下文的关系</a></li>
-                <li><a href="#layer2-compact" class="toc-h3">压缩时怎么用笔记？</a></li>
-                <li><a href="#layer2-pros-cons" class="toc-h3">优势与局限</a></li>
-                <li><a href="#layer2-failures" class="toc-h3">失败的情况</a></li>
+                <li><a href="#layer2-compact" class="toc-h3">压缩时怎么用笔记</a></li>
+                <li><a href="#layer2-failures" class="toc-h3">失败情况</a></li>
+                <li><a href="#layer2-not-enough" class="toc-h3">当笔记系统也不够用时</a></li>
                 <li><a href="#layer3">第3层：全量压缩（Full Compact）</a></li>
-                <li><a href="#layer3-logic" class="toc-h3">执行逻辑</a></li>
-                <li><a href="#layer3-prompt" class="toc-h3">提示词设计</a></li>
+                <li><a href="#layer3-flow" class="toc-h3">执行流程</a></li>
+                <li><a href="#layer3-prompt" class="toc-h3">摘要提示词的设计要点</a></li>
                 <li><a href="#layer3-rebuild" class="toc-h3">重建上下文</a></li>
-                <li><a href="#layer3-after" class="toc-h3">Full Compact 后笔记怎么办？</a></li>
+                <li><a href="#layer3-after" class="toc-h3">Full Compact 后笔记的处理</a></li>
                 <li><a href="#layer4">第4层：Snip（剪断）</a></li>
-                <li><a href="#pipeline">完整的执行流水线</a></li>
-                <li><a href="#threshold">压缩的阈值判断</a></li>
-                <li><a href="#comparison">Session Memory vs Full Compact</a></li>
-                <li><a href="#manual-compact">手动 /compact 指令</a></li>
+                <li><a href="#comparison">Session Memory vs Full Compact 对比</a></li>
+                <li><a href="#manual-compact">手动 /compact 的实际行为</a></li>
+                <li><a href="#compact-vs-clear">/compact vs /clear</a></li>
                 <li><a href="#philosophy">核心设计哲学</a></li>
-                <li><a href="#conclusion">总结与实用建议</a></li>
-                <li><a href="#conclusion-summary" class="toc-h3">系统总结</a></li>
-                <li><a href="#conclusion-backup" class="toc-h3">本地完整备份</a></li>
-                <li><a href="#conclusion-compact-vs-clear" class="toc-h3">/compact vs /clear</a></li>
                 <li><a href="#appendix-a">附录A：Session Memory 更新提示词</a></li>
                 <li><a href="#appendix-b">附录B：Full Compact 压缩提示词</a></li>
             </ul>
@@ -75,17 +75,33 @@
                 <div class="article-content">
 
                     <blockquote>
-                        <p><strong>编者注：读完源码后的三个意外发现——</strong></p>
-                        <p>1. <strong>Anthropic 居然在帮用户省钱？</strong> Claude Code 在后台偷偷用异步笔记系统记录对话要点，压缩时直接读笔记、不调 LLM，省掉了最贵的那一次 API 调用。子代理还共享主对话的 prompt cache，input token 只付一折。万万没想到，最烧钱的 AI 公司在代码层面抠得这么细。</p>
-                        <p>2. <strong>你每天在用的 <code>/compact</code> 可能根本没走 Full Compact。</strong> 如果你不带参数直接敲 <code>/compact</code>，它大概率走的是 Session Memory 路径——毫秒级完成、零额外 API 费用。只有带自定义指令（如 <code>/compact 侧重错误日志</code>）时才会真正调 LLM 做全量压缩。</p>
-                        <p>3. <strong>能不 <code>/clear</code> 就别 <code>/clear</code>。</strong> <code>/compact</code> 是压缩行李继续旅行，完整对话历史保留在本地，AI 随时能翻旧账；<code>/clear</code> 是扔掉所有行李重新出发，AI 再也找不回之前的上下文。</p>
+                        <p>Claude Code 如何在有限的上下文窗口里，用四层递进策略平衡信息保留、成本和延迟。</p>
                     </blockquote>
 
-                    <h2 id="intro">引言：为什么需要上下文压缩？</h2>
+                    <h2 id="editor-note">编者注：三个意外发现</h2>
 
-                    <p>大语言模型有一个物理限制——上下文窗口。即使上下文窗口有 200K token，一个复杂的编程会话（读文件、执行命令、反复修改代码）很容易就会把它撑满。满了怎么办？要么停止对话，要么想办法把旧内容腾出去。</p>
+                    <ol>
+                        <li><strong>Anthropic 在帮用户省钱。</strong> 后台异步笔记系统记录对话要点，压缩时直接读笔记、不调 LLM，省掉了最贵的那次 API 调用。子代理还共享主对话的 prompt cache，input token 只付一折。</li>
+                        <li><strong>不带参数的 <code>/compact</code> 可能根本没走 Full Compact。</strong> 如果笔记文件存在且非空，它大概率走 Session Memory 路径——毫秒级完成、零额外 API 费用。只有带自定义指令（如 <code>/compact 侧重错误日志</code>）时才会真正调 LLM。</li>
+                        <li><strong>能不 <code>/clear</code> 就别 <code>/clear</code>。</strong> <code>/compact</code> 是压缩行李继续旅行，完整对话历史保留在本地；<code>/clear</code> 是扔掉所有行李重新出发，AI 再也找不回之前的上下文。</li>
+                    </ol>
 
-                    <p>Claude Code 选择了后者，而且做得极其精细——它设计了一套<strong>四层递进的压缩体系</strong>，从"零信息损失"到"受控信息降级"，层层递进。</p>
+                    <hr>
+
+                    <h2 id="why">为什么需要上下文压缩</h2>
+
+                    <p>大语言模型有上下文窗口的物理限制。即使有 200K token，一个复杂编程会话（读文件、执行命令、反复修改代码）很容易撑满。满了之后要么停止对话，要么把旧内容腾出去。</p>
+
+                    <p>Claude Code 选择了后者，设计了一套<strong>四层递进的压缩体系</strong>，从"零信息损失"到"受控信息降级"层层递进。</p>
+
+                    <h3 id="scenario">一个具体的场景</h3>
+
+                    <p>为了让后续的机制不那么抽象，我们跟着一个真实的使用场景走完全程：</p>
+
+                    <blockquote>
+                        <p><strong>小杨</strong>正在用 Claude Code 重构一个 Express 项目。他已经连续工作了 2 小时，期间让 AI 读了十几个文件、跑了几十次 grep 搜索、改了七八个模块。此时上下文已经积累到了 <strong>160K token</strong>（200K 窗口的 80%），而他还需要继续改下去。</p>
+                        <p>接下来会发生什么？</p>
+                    </blockquote>
 
                     <hr>
 
@@ -101,322 +117,9 @@
   │
   └─ 第4层：Snip（剪断）—— 物理删除最老的消息</code></pre>
 
-                    <p>每一层只在上一层"撑不住"时才触发。下面逐层拆解。</p>
+                    <p>每一层只在上一层"撑不住"时才触发。</p>
 
-                    <hr>
-
-                    <h2 id="layer1">第1层：微压缩（MicroCompact）—— 最温柔的手段</h2>
-
-                    <p>微压缩的核心思路是：<strong>工具执行结果（比如 grep 搜出来的几千行、cat 读出来的大文件）是上下文中最大的"空间杀手"，但对后续对话的价值在快速衰减。</strong></p>
-
-                    <p>微压缩有两条路径，根据缓存状态选择：</p>
-
-                    <h3 id="layer1-path-a">路径A：时间过期 → 直接清空旧工具结果</h3>
-
-                    <p>当距离上次 AI 回复超过 N 分钟时（比如用户去喝咖啡了），服务器端的 prompt cache 已经过期。既然缓存已经冷了，那就不需要顾忌缓存，直接把旧的工具执行结果替换为一句 <code>[Old tool result content cleared]</code>。</p>
-
-<pre><code>清空前：
-  tool_result: "搜索结果：第1行... 第2行... （5000行）"
-
-清空后：
-  tool_result: "[Old tool result content cleared]"</code></pre>
-
-                    <p>但它不是清空所有工具结果，而是<strong>保留最近 N 个</strong>（通过配置控制），只清较老的。</p>
-
-                    <h3 id="layer1-path-b">路径B：缓存还热 → 通过 cache_edits "隔空删除"</h3>
-
-                    <p>这是 Claude Code 最精巧的设计之一。</p>
-
-                    <p>问题在于：如果缓存还没过期，你修改了本地消息内容，发送给 API 的前缀就变了，缓存就失效了——等于白花了之前建缓存的钱。</p>
-
-                    <p>Claude Code 的解决办法：<strong>本地消息一个字都不改</strong>，而是在 API 请求中附带一个 <code>cache_edits</code> 指令，告诉服务器"你缓存里那段工具结果，帮我删掉"。服务器执行删除，但缓存前缀没变，其他部分继续命中。</p>
-
-                    <p>打个比方：你在图书馆借了一本书，想撕掉中间几页。正常做法是撕了再还，但图书馆会认为这是新书，要重新登记。Claude Code 的做法是告诉图书管理员"帮我把第 50-60 页遮住"，书还是那本书，借阅记录不用重建。</p>
-
-                    <h3 id="layer1-limits">微压缩的限制</h3>
-
-                    <p>微压缩只动<strong>特定工具</strong>的结果（FileRead、Bash、PowerShell、Grep、Glob、WebSearch、WebFetch、FileEdit、FileWrite 共 9 种），不动对话文本、不动 AI 的推理过程、不动用户消息。所以它能释放的空间有限——如果上下文主要被大量来回对话填满的，微压缩帮不了。</p>
-
-                    <hr>
-
-                    <h2 id="layer2">第2层：会话记忆压缩（Session Memory Compact）—— 用笔记替换旧对话</h2>
-
-                    <h3 id="layer2-notes">"笔记"是什么？</h3>
-
-                    <p>Session Memory 本质上是一个<strong>后台持续维护的 Markdown 笔记文件</strong>，保存在磁盘上。它有固定的 9 个章节：</p>
-
-<pre><code># Session Title         — 5-10个词的会话标题
-# Current State         — 当前正在做什么，待办，下一步
-# Task specification    — 用户要求构建什么
-# Files and Functions   — 重要的文件及其作用
-# Workflow              — 常用的命令和执行顺序
-# Errors &amp; Corrections  — 遇到的错误、修复方法、失败的方案
-# Codebase and System Documentation — 系统组件和架构
-# Learnings             — 经验教训，什么有效什么无效
-# Key results           — 用户要求的特定输出（表格、答案等）
-# Worklog               — 逐步操作记录</code></pre>
-
-                    <h3 id="layer2-update">笔记怎么更新？</h3>
-
-                    <p>后台有一个异步钩子（post-sampling hook），在 AI 每次回复后检查是否该记笔记。<strong>不是每次都记</strong>，必须同时满足三个条件：</p>
-
-                    <ol>
-                        <li><strong>首次门槛</strong>：上下文总 token ≥ 10,000 才开始（对话前几轮不跑）</li>
-                        <li><strong>增长门槛</strong>：距上次记笔记后，上下文增长 ≥ 5,000 token</li>
-                        <li><strong>工具调用门槛</strong>：距上次记笔记后，工具调用 ≥ 3 次；或者 AI 最后一轮没调工具（自然对话断点）</li>
-                    </ol>
-
-                    <p>满足条件后，系统会 <strong>fork 一个子代理</strong>（不是直接用主对话的 AI），给它发一段精心设计的提示词（完整原文见 <a href="#appendix-a">附录A</a>）。</p>
-
-                    <p>这段提示词的核心要求是：</p>
-                    <ul>
-                        <li>基于对话内容，用 Edit 工具更新笔记文件，然后停止</li>
-                        <li>保持章节结构（标题和斜体描述行）完全不变，只更新内容</li>
-                        <li>每个章节不超过 ~2000 token，接近限制时精简旧内容</li>
-                        <li><strong>始终更新 "Current State" 章节</strong>——这对压缩后的连续性至关重要</li>
-                        <li>写详细、信息密集的内容：文件路径、函数名、错误信息、确切命令</li>
-                        <li>不要引用笔记系统本身的指令，保持笔记内容纯净</li>
-                        <li>可以并行发起多个 Edit 调用，一次更新多个章节</li>
-                    </ul>
-
-                    <p>笔记模板也支持自定义——用户可以在 <code>~/.claude/session-memory/config/template.md</code> 放置自己的模板文件，替换默认的 9 个章节结构。同样，更新提示词也可以通过 <code>~/.claude/session-memory/config/prompt.md</code> 自定义。</p>
-
-                    <h3 id="layer2-model">子代理的模型、API Key 和缓存省钱机制</h3>
-
-                    <p><strong>模型</strong>：子代理使用<strong>和主对话完全一致的模型</strong>。源码中子代理继承了 <code>parentContext.options</code>（包含 <code>mainLoopModel</code>），没有任何单独模型的逻辑。你用 Sonnet 对话，子代理就是 Sonnet；用 Opus 对话，子代理就是 Opus。</p>
-
-                    <p><strong>API Key</strong>：子代理和主对话共用<strong>同一个 API Key</strong>，走同一个 <code>query()</code> 函数和 API 客户端。不需要独立 Key，因为记笔记是在主对话 AI 回复完成后（post-sampling hook）才触发的，不会和主对话同时调 API。<code>sequential()</code> 包装器还保证同时只有一个记笔记任务在跑。</p>
-
-                    <p><strong>Prompt Cache 省钱原理</strong>：</p>
-
-                    <p>每次调 API，发过去的内容（系统提示 + 工具定义 + 对话历史 + 新消息）都是 input token，需要付费。关键在于主对话和子代理发送的内容有大量重复：</p>
-
-<pre><code>主对话发给 API 的内容：
-  系统提示（5K） + 工具定义（15K） + 对话历史（80K） + 用户新消息（1K）
-  = 101K input token，全价收费
-
-紧接着子代理发给 API 的内容：
-  系统提示（5K） + 工具定义（15K） + 对话历史（80K） + 记笔记提示词（2K）
-  ─────────── 前 100K 跟上面完全一样 ──────────     ─── 新增 ───</code></pre>
-
-                    <p>Anthropic 的服务器发现"这个请求的前 100K 跟刚才那个请求一样"，就不重新处理，直接复用缓存。计费规则：</p>
-
-<pre><code>缓存命中部分（cache_read）：正常 input 价格的 10%
-缓存未命中部分：正常 input 价格的 100%
-
-具体计算（假设 input 价格 = $3 / 1M token）：
-
-没缓存：102K × $3/1M = $0.306
-有缓存：100K × $0.3/1M + 2K × $3/1M = $0.030 + $0.006 = $0.036
-
-省了约 88% 的 input 费用</code></pre>
-
-                    <p>这就是为什么 <code>CacheSafeParams</code> 要确保子代理的前缀和主对话<strong>完全一致</strong>——差一个字节缓存就不命中，就要全价付。子代理的输出也很少——只是几次 Edit 工具调用，几百 token，output 费用可以忽略。</p>
-
-                    <p>记完笔记后，系统在最后一条消息上打一个<strong>书签</strong>（<code>lastSummarizedMessageId</code>），标记"我已经总结到这里了"。注意：打书签有一个安全检查——如果最后一轮 assistant 还有工具调用未完成，就不更新书签，避免压缩时把 <code>tool_use</code> 和 <code>tool_result</code> 拆开导致 API 报错。</p>
-
-                    <h3 id="layer2-relation">笔记与上下文的关系：单向提取，不反向标记</h3>
-
-                    <p>笔记和上下文之间的关系是<strong>单向的</strong>——上下文内容被提取进笔记，但笔记不会反向给上下文中的消息打标签。书签只记录一个时间点位（"我总结到第 N 条消息了"），不做消息与笔记章节之间的精确映射。</p>
-
-                    <p>这意味着存在一个<strong>信息对齐的模糊地带</strong>：笔记有 12K token 的容量上限，多次更新后旧内容会被新内容挤掉。压缩时删除书签之前的所有消息，但笔记里可能已经不包含那些早期消息中的某些细节了——这部分信息会永久丢失。系统<strong>不做验证</strong>，不会检查"我要删的消息里的信息是否真的都在笔记里了"。这是一个有意的工程权衡。</p>
-
-                    <h3 id="layer2-compact">压缩时怎么用笔记？</h3>
-
-                    <p>当上下文快满需要压缩时：</p>
-
-                    <ol>
-                        <li><strong>等待笔记提取完成</strong>——如果后台正在记笔记，先等它完成（最多等 15 秒，超过 1 分钟的过时任务直接跳过），确保使用最新的笔记内容</li>
-                        <li>从磁盘读取笔记文件（毫秒级，零 API 费用）</li>
-                        <li>根据书签找到分界点——书签之前的消息"笔记已覆盖"，可以删</li>
-                        <li>书签之后的消息必须保留（笔记没覆盖）</li>
-                        <li>如果保留的消息不够多，往前扩展，保证至少 10K token / 5 条文本消息</li>
-                        <li>最终结果：<code>[边界标记] + [笔记] + [保留的原始消息]</code></li>
-                    </ol>
-
-<pre><code>压缩前（~95K）：
-  [msg-1 ─── msg-2 ─── ... ─── msg-78] [msg-79 ─── msg-80]
-  ────── 笔记已覆盖（书签在msg-78）──   ── 笔记没覆盖 ──
-
-压缩后（~40K）：
-  [边界标记] [笔记 10K] [msg-79, msg-80 + 往前扩展到10K~40K]</code></pre>
-
-                    <h3 id="layer2-pros-cons">笔记方案的优势与局限</h3>
-
-                    <p><strong>优势：</strong></p>
-                    <ul>
-                        <li>压缩时零 API 费用、毫秒级完成</li>
-                        <li>最近的原始消息完整保留（精确的代码、错误信息不丢）</li>
-                        <li>结构化笔记信息密度高</li>
-                    </ul>
-
-                    <p><strong>局限：</strong></p>
-                    <ul>
-                        <li>笔记总量上限 12K token，越往后旧内容越会被挤掉</li>
-                        <li>书签机制是"一刀切"——不知道笔记里是否真的包含了所有被删消息的重要信息</li>
-                        <li>每个章节限 2000 token，固定结构不一定适合所有场景</li>
-                    </ul>
-
-                    <h3 id="layer2-failures">Session Memory Compact 失败的情况</h3>
-
-                    <p>以下 5 种情况会导致笔记方案失败，回退到全量压缩：</p>
-
-                    <ol>
-                        <li>功能 flag 没开</li>
-                        <li>笔记文件不存在（对话太短，还没触发过记笔记）</li>
-                        <li>笔记是空模板（文件创建了但还没写入内容）</li>
-                        <li>书签找不到（消息被外部修改过）</li>
-                        <li>压缩后仍然超标（笔记 + 保留消息 > 阈值）</li>
-                    </ol>
-
-                    <hr>
-
-                    <h2 id="layer3">第3层：全量压缩（Full Compact）—— 笔记系统的兜底方案</h2>
-
-                    <p><strong>Full Compact 不是独立的压缩策略，而是 Session Memory（笔记系统）的兜底方案。</strong> 在正常情况下，笔记系统是上下文压缩的主力。只有当笔记系统出现异常（笔记文件不存在、内容为空、书签丢失、压缩后仍超标等 5 种失败情况）时，才会回退到 Full Compact。</p>
-
-                    <h3 id="layer3-logic">Full Compact 的执行逻辑</h3>
-
-                    <p>Full Compact 也是通过 fork 一个子代理来完成的，但和记笔记的子代理不同，它的任务更重——需要对<strong>整个对话</strong>生成一份详尽的摘要。</p>
-
-                    <p>具体流程：</p>
-                    <ol>
-                        <li><strong>先跑微压缩</strong>——减少发给 LLM 的 token 量（清空旧工具结果）</li>
-                        <li><strong>fork 子代理</strong>，发送压缩提示词（完整原文见 <a href="#appendix-b">附录B</a>）</li>
-                        <li><strong>子代理返回摘要</strong>——包含 <code>&lt;analysis&gt;</code> 草稿区和 <code>&lt;summary&gt;</code> 正文</li>
-                        <li><strong>代码后处理</strong>——删除 <code>&lt;analysis&gt;</code>、格式化 <code>&lt;summary&gt;</code></li>
-                        <li><strong>代码重建工作环境</strong>——并行生成附件（文件、计划、技能、工具列表等）</li>
-                        <li><strong>拼装新上下文</strong>——<code>[边界标记] + [摘要] + [附件] + [SessionStart hooks]</code></li>
-                    </ol>
-
-                    <h3 id="layer3-prompt">生成摘要的提示词设计</h3>
-
-                    <p>提示词经过精心设计，有几个值得注意的点（完整原文见 <a href="#appendix-b">附录B</a>）：</p>
-
-                    <p><strong>反复强调不许调工具：</strong></p>
-
-                    <p>提示词开头和结尾都写了"绝对不许调工具，只用纯文本回复"，而且解释了后果（"工具调用会被拒绝且浪费你唯一的回合"）。这是因为 fork 出来的子代理继承了主对话的完整工具集，模型有时会"手痒"想调工具，必须强力压制。</p>
-
-                    <p><strong>草稿区设计（<code>&lt;analysis&gt;</code> + <code>&lt;summary&gt;</code>）：</strong></p>
-
-                    <p>提示词要求 LLM 先在 <code>&lt;analysis&gt;</code> 标签里打草稿，梳理思路，然后再写正式的 <code>&lt;summary&gt;</code>。摘要生成后，代码会调用 <code>formatCompactSummary()</code> 自动删除 <code>&lt;analysis&gt;</code> 部分，只保留 <code>&lt;summary&gt;</code>。</p>
-
-                    <p>这等于花了 output token 让模型"想清楚再写"，提高了摘要质量，但草稿不会占用后续上下文空间。</p>
-
-                    <p><strong>9 个必须包含的章节：</strong></p>
-
-                    <ol>
-                        <li>主要请求和意图</li>
-                        <li>关键技术概念</li>
-                        <li>文件和代码段（要求包含完整代码片段）</li>
-                        <li>错误和修复</li>
-                        <li>问题解决过程</li>
-                        <li>所有用户消息（逐条列出非工具结果的）</li>
-                        <li>待办任务</li>
-                        <li>当前工作（精确到正在做什么，包含文件名和代码）</li>
-                        <li>下一步（要求引用对话原文，防止理解偏差）</li>
-                    </ol>
-
-                    <p><strong>防止意图漂移的措施：</strong></p>
-
-                    <p>第 9 点特别有意思——它要求 LLM "包含对话中的直接引用，展示你正在做的确切任务和进度"。这是为了防止压缩后模型对"我该继续做什么"产生理解偏差。</p>
-
-                    <h3 id="layer3-rebuild">重建上下文（代码负责，不过 LLM）</h3>
-
-                    <p>LLM 只负责生成对话摘要。摘要生成完后，系统用纯代码逻辑重建工作环境：</p>
-
-<pre><code>压缩后的上下文 = [
-  ① 边界标记（记录压缩前的 token 数、已发现的工具）
-  ② LLM 生成的摘要
-  ③ 最近读过的文件（最多 5 个，每个 5K token）
-  ④ 当前计划文件
-  ⑤ 计划模式指令
-  ⑥ 已调用的技能内容（每个 5K，总预算 25K）
-  ⑦ 延迟加载的工具列表
-  ⑧ 可用代理列表
-  ⑨ MCP 服务器指令
-  ⑩ SessionStart hooks 结果（如 CLAUDE.md 注入）
-]</code></pre>
-
-                    <p>这些附件的生成是<strong>并行</strong>的——文件附件和代理状态同时生成，减少压缩延迟。</p>
-
-                    <h3 id="layer3-after">Full Compact 后笔记怎么办？</h3>
-
-                    <p>Full Compact 后：</p>
-                    <ul>
-                        <li><strong>笔记文件不会被清空</strong>（继续保留在磁盘上）</li>
-                        <li><strong>书签会被清空</strong>（<code>setLastSummarizedMessageId(undefined)</code>）</li>
-                    </ul>
-
-                    <p>为什么不清笔记？因为后续对话继续时，后台记笔记机制会接着更新同一个文件。如果清空了，笔记就要从零开始积累，下次压缩又得走 Full Compact。保留旧笔记让"冷启动"期更短。</p>
-
-                    <p>但存在一个"尴尬期"：Full Compact 后，旧笔记内容跟新对话不匹配，新书签还没打上。这段时间里如果又触发压缩，Session Memory Compact 大概率会失败，还是得 Full Compact。</p>
-
-                    <hr>
-
-                    <h2 id="layer4">第4层：Snip（剪断）—— 辅助手段</h2>
-
-                    <p>Snip 是一个实验性功能（<code>feature('HISTORY_SNIP')</code> 门控），从最老的消息开始物理删除。</p>
-
-                    <p>它不是独立运行的，而是<strong>和其他层配合</strong>——先 snip 释放一些空间，然后把释放量告诉 autocompact（<code>snipTokensFreed</code>），让 autocompact 判断还需不需要做更重的压缩。</p>
-
-<pre><code>// query.ts 中的执行顺序
-let snipTokensFreed = 0
-if (feature('HISTORY_SNIP')) {
-  const snipResult = snipModule.snipCompactIfNeeded(messagesForQuery)
-  snipTokensFreed = snipResult.tokensFreed  // 告诉后续步骤"我已经释放了这么多"
-}
-// snipTokensFreed 传递给 autocompact 的阈值判断</code></pre>
-
-                    <hr>
-
-                    <h2 id="pipeline">完整的执行流水线</h2>
-
-                    <p>每次用户发送消息后，在调 API 之前，上下文要经过一个<strong>7 步预处理管道</strong>：</p>
-
-<pre><code>用户消息进来
-    │
-    ▼
-① 【裁切旧历史】getMessagesAfterCompactBoundary()
-    如果之前做过压缩，只保留压缩点之后的消息
-
-    ▼
-② 【大结果存磁盘】applyToolResultBudget()
-    两层预算控制：
-    - 单个工具结果 > 50K 字符？写磁盘文件，消息里只放预览+文件路径
-    - 单条消息的所有工具结果总和 > 200K 字符？最大的块被持久化到磁盘
-
-    ▼
-③ 【Snip】snipCompactIfNeeded()
-    从最老的消息开始物理删除，释放空间
-
-    ▼
-④ 【微压缩】microcompactMessages()
-    时间过期 → 清空旧工具结果内容
-    缓存还热 → cache_edits 隔空删除
-
-    ▼
-⑤ 【上下文折叠】applyCollapsesIfNeeded()
-    把对话的某些段落折叠成摘要（实验性功能）
-
-    ▼
-⑥ 【自动压缩判断】autoCompactIfNeeded()
-    "上下文快满了吗？"
-    ├── 没满 → 跳过
-    └── 快满了 →
-        ├── 先尝试 Session Memory Compact
-        └── 失败则 Full Compact
-
-    ▼
-⑦ 【拼装 API 请求】
-    系统提示 + 用户上下文 + 消息标准化 + 缓存标记
-    → 发送给 API</code></pre>
-
-                    <hr>
-
-                    <h2 id="threshold">压缩的阈值判断</h2>
-
-                    <p>什么时候算"快满了"？</p>
+                    <h3 id="threshold">什么时候算"快满了"</h3>
 
 <pre><code>有效上下文窗口 = 模型上下文窗口 - 摘要输出预留(20K)
 自动压缩阈值 = 有效上下文窗口 - 缓冲区(13K)
@@ -426,11 +129,251 @@ if (feature('HISTORY_SNIP')) {
   触发阈值 = 180K - 13K = 167K
   → 当 token 使用量 ≥ 167K 时触发自动压缩</code></pre>
 
-                    <p>还有一个<strong>熔断器</strong>机制：如果连续 3 次压缩都失败（比如上下文无法恢复到阈值以下），就停止尝试，避免无限重试浪费 API 调用。这个设计来自真实的线上数据——曾有用户单个会话连续失败 3272 次，每天全球浪费约 25 万次 API 调用。</p>
+                    <p>回到小杨的场景：他的上下文已经 160K，还没到 167K 的阈值。但他接下来又让 AI 读了两个大文件（各 5K），token 飙到 170K——<strong>触发了自动压缩</strong>。</p>
+
+                    <p>还有一个<strong>熔断器</strong>机制：连续 3 次压缩失败就停止尝试，避免无限重试。这个设计来自真实线上数据——曾有用户单个会话连续失败 3272 次，每天全球浪费约 25 万次 API 调用。</p>
+
+                    <h3 id="pipeline">完整的执行流水线</h3>
+
+                    <p>每次用户发送消息后，在调 API 之前，上下文要经过 7 步预处理：</p>
+
+                    <ol>
+                        <li><strong>裁切旧历史</strong> — 如果之前做过压缩，只保留压缩点之后的消息</li>
+                        <li><strong>大结果存磁盘</strong> — 单个工具结果 &gt; 50K 字符写磁盘，单条消息所有工具结果 &gt; 200K 字符也持久化</li>
+                        <li><strong>Snip</strong> — 从最老的消息开始物理删除，释放空间</li>
+                        <li><strong>微压缩</strong> — 时间过期→清空旧工具结果；缓存还热→cache_edits 隔空删除</li>
+                        <li><strong>上下文折叠</strong> — 把某些段落折叠成摘要（实验性功能）</li>
+                        <li><strong>自动压缩判断</strong> — 先尝试 Session Memory Compact，失败则 Full Compact</li>
+                        <li><strong>拼装 API 请求</strong> — 系统提示 + 用户上下文 + 消息标准化 + 缓存标记 → 发送给 API</li>
+                    </ol>
+
+                    <p>小杨的 170K 请求进来后，系统首先尝试的是第 1 层——微压缩。</p>
 
                     <hr>
 
-                    <h2 id="comparison">Session Memory vs Full Compact：如何选择？</h2>
+                    <h2 id="layer1">第1层：微压缩（MicroCompact）</h2>
+
+                    <p>微压缩的核心思路：<strong>工具执行结果是上下文中最大的"空间杀手"，但对后续对话的价值在快速衰减。</strong></p>
+
+                    <p>小杨两小时前 grep 出来的 5000 行搜索结果，现在对话已经远远推进了，那些结果早就没用了——但它们还占着上下文空间。微压缩要做的就是把这些"过期的大块头"清掉。</p>
+
+                    <h3 id="layer1-path-a">路径A：缓存已冷 → 直接清空旧工具结果</h3>
+
+                    <p>当距离上次 AI 回复超过 N 分钟时，服务器端的 prompt cache 已过期。既然缓存冷了，直接把旧的工具执行结果替换为 <code>[Old tool result content cleared]</code>，但<strong>保留最近 N 个</strong>（通过配置控制），只清较老的。</p>
+
+                    <h3 id="layer1-path-b">路径B：缓存还热 → 通过 cache_edits "隔空删除"</h3>
+
+                    <p>如果缓存未过期，修改本地消息内容会导致缓存前缀变化、缓存失效。Claude Code 的做法是：<strong>本地消息一个字都不改</strong>，在 API 请求中附带 <code>cache_edits</code> 指令，告诉服务器"缓存里那段工具结果，帮我删掉"。服务器执行删除，但缓存前缀没变，其他部分继续命中。</p>
+
+                    <p>类比：在图书馆借了一本书想遮掉中间几页，不撕掉再还（会被当成新书重新登记），而是告诉管理员"帮我把第 50-60 页遮住"——书还是那本书，借阅记录不用重建。</p>
+
+                    <p>小杨的情况：他一直在连续工作，缓存还热着，所以走的是路径 B——cache_edits 隔空删除了早期那些 grep 和 cat 的结果。</p>
+
+                    <h3 id="layer1-limits">微压缩的限制</h3>
+
+                    <p>只处理<strong>9 种特定工具</strong>的结果（FileRead、Bash、PowerShell、Grep、Glob、WebSearch、WebFetch、FileEdit、FileWrite），不动对话文本、AI 推理过程、用户消息。如果上下文主要被大量来回对话填满，微压缩帮不了。</p>
+
+                    <h3 id="layer1-after">微压缩之后：够不够？</h3>
+
+                    <p>微压缩清掉了小杨早期的工具结果，释放了大约 30K token，上下文降到 140K——低于 167K 的阈值了。<strong>这次压缩到此结束</strong>，小杨完全无感。</p>
+
+                    <p>但如果小杨的会话更长呢？假设他又工作了半小时，上下文再次逼近 167K，而这次早期的工具结果已经在上一轮微压缩中清过了，没什么可清的了——微压缩释放的空间不够，上下文仍然超标。</p>
+
+                    <p>这时候，系统进入第 2 层：Session Memory Compact。</p>
+
+                    <hr>
+
+                    <h2 id="layer2">第2层：会话记忆压缩（Session Memory Compact）</h2>
+
+                    <p>微压缩只能清理工具结果这种"大块头垃圾"。但对话本身——用户的问题、AI 的分析、来回讨论的设计决策——这些文本内容微压缩碰都不碰。当这些对话文本本身累积到很大的量级时，就需要一种更深层的压缩：<strong>用一份预先准备好的笔记来替代那些旧对话。</strong></p>
+
+                    <p>这就是 Session Memory 的思路——与其等到上下文满了再花钱调 LLM 写摘要，不如<strong>在对话过程中就偷偷记笔记</strong>，到了需要压缩时直接用现成的笔记顶上，零 API 费用、毫秒级完成。</p>
+
+                    <h3 id="layer2-what">什么是 Session Memory</h3>
+
+                    <p>本质是一个<strong>后台持续维护的 Markdown 笔记文件</strong>，保存在磁盘上，固定 9 个章节：</p>
+
+                    <table>
+                        <thead><tr><th>章节</th><th>内容</th></tr></thead>
+                        <tbody>
+                            <tr><td>Session Title</td><td>5-10 词的会话标题</td></tr>
+                            <tr><td>Current State</td><td>当前任务、待办、下一步</td></tr>
+                            <tr><td>Task specification</td><td>用户要求构建什么</td></tr>
+                            <tr><td>Files and Functions</td><td>重要文件及其作用</td></tr>
+                            <tr><td>Workflow</td><td>常用命令和执行顺序</td></tr>
+                            <tr><td>Errors &amp; Corrections</td><td>遇到的错误、修复方法、失败方案</td></tr>
+                            <tr><td>Codebase and System Documentation</td><td>系统组件和架构</td></tr>
+                            <tr><td>Learnings</td><td>经验教训</td></tr>
+                            <tr><td>Key results</td><td>用户要求的特定输出</td></tr>
+                            <tr><td>Worklog</td><td>逐步操作记录</td></tr>
+                        </tbody>
+                    </table>
+
+                    <p>回到小杨的场景：他在这 2.5 小时的工作中，后台已经悄悄更新了这份笔记十几次——记下了他在重构哪些模块、遇到了什么报错、当前改到哪里了。</p>
+
+                    <p>笔记模板支持自定义——用户可在 <code>~/.claude/session-memory/config/template.md</code> 放置自己的模板，更新提示词也可通过 <code>~/.claude/session-memory/config/prompt.md</code> 自定义。</p>
+
+                    <h3 id="layer2-update">笔记的更新机制</h3>
+
+                    <p>后台有一个异步钩子（post-sampling hook），在 AI 每次回复后检查是否该记笔记。<strong>不是每次都记</strong>，必须同时满足三个条件：</p>
+
+                    <ol>
+                        <li><strong>首次门槛</strong>：上下文总 token ≥ 10,000</li>
+                        <li><strong>增长门槛</strong>：距上次记笔记后，上下文增长 ≥ 5,000 token</li>
+                        <li><strong>工具调用门槛</strong>：距上次记笔记后，工具调用 ≥ 3 次；或 AI 最后一轮没调工具（自然对话断点）</li>
+                    </ol>
+
+                    <p>满足条件后，系统 <strong>fork 一个子代理</strong>（不是直接用主对话的 AI）来更新笔记。子代理的核心要求是：</p>
+
+                    <ul>
+                        <li>用 Edit 工具更新笔记文件，保持章节结构不变</li>
+                        <li>每个章节不超过 ~2000 token，接近限制时精简旧内容</li>
+                        <li><strong>始终更新 "Current State"</strong>——这对压缩后的连续性至关重要</li>
+                        <li>写详细、信息密集的内容：文件路径、函数名、错误信息、确切命令</li>
+                        <li>可以并行发起多个 Edit 调用</li>
+                    </ul>
+
+                    <p>记完笔记后，系统在最后一条消息上打<strong>书签</strong>（<code>lastSummarizedMessageId</code>）。安全检查：如果最后一轮 assistant 还有工具调用未完成，不更新书签，避免把 <code>tool_use</code> 和 <code>tool_result</code> 拆开导致 API 报错。</p>
+
+                    <h3 id="layer2-model">子代理的模型、API Key 和缓存省钱机制</h3>
+
+                    <p><strong>模型</strong>：与主对话完全一致，继承 <code>parentContext.options</code>。用 Sonnet 对话就是 Sonnet，用 Opus 就是 Opus。</p>
+
+                    <p><strong>API Key</strong>：与主对话共用。记笔记在主对话 AI 回复完成后才触发，不会同时调 API。<code>sequential()</code> 包装器保证同时只有一个记笔记任务在跑。</p>
+
+                    <p><strong>Prompt Cache 省钱原理</strong>：主对话和子代理发送的内容有大量重复前缀（系统提示 + 工具定义 + 对话历史），服务器发现前缀相同就复用缓存。</p>
+
+<pre><code>没缓存：102K × $3/1M = $0.306
+有缓存：100K × $0.3/1M + 2K × $3/1M = $0.036
+
+省了约 88% 的 input 费用</code></pre>
+
+                    <p>这就是为什么 <code>CacheSafeParams</code> 要确保子代理的前缀和主对话<strong>完全一致</strong>——差一个字节缓存就不命中。</p>
+
+                    <h3 id="layer2-relation">笔记与上下文的关系</h3>
+
+                    <p>笔记和上下文之间是<strong>单向提取</strong>——上下文内容被提取进笔记，但笔记不会反向给上下文中的消息打标签。书签只记录一个时间点位，不做消息与笔记章节的精确映射。</p>
+
+                    <p>这意味着存在<strong>信息对齐的模糊地带</strong>：笔记总量上限 12K token，多次更新后旧内容会被新内容挤掉。压缩时删除书签之前的所有消息，但笔记里可能已不包含那些早期消息的某些细节——这部分信息会永久丢失。系统<strong>不做验证</strong>，这是一个有意的工程权衡。</p>
+
+                    <h3 id="layer2-compact">压缩时怎么用笔记</h3>
+
+                    <ol>
+                        <li><strong>等待笔记提取完成</strong>——后台正在记笔记则等它完成（最多 15 秒，超 1 分钟的过时任务跳过）</li>
+                        <li>从磁盘读取笔记文件（毫秒级，零 API 费用）</li>
+                        <li>根据书签找到分界点——书签之前的消息"笔记已覆盖"，可以删</li>
+                        <li>书签之后的消息必须保留</li>
+                        <li>如果保留消息不够多，往前扩展，保证至少 10K token / 5 条文本消息</li>
+                        <li>最终结果：<code>[边界标记] + [笔记] + [保留的原始消息]</code></li>
+                    </ol>
+
+                    <p>小杨的情况：系统从磁盘读出笔记（~10K），找到书签——小杨最近 15 分钟的消息在书签之后要保留，之前 2 小时的对话全部用笔记替代。</p>
+
+<pre><code>压缩前（~170K）：
+  [2小时前的对话 ─── ... ─── 书签位置] [最近15分钟的对话]
+  ──────── 笔记已覆盖 ────────────────   ── 必须保留 ──
+
+压缩后（~45K）：
+  [边界标记] [笔记 10K] [最近15分钟的原始消息 ~35K]</code></pre>
+
+                    <p>从 170K 压到 45K，零 API 费用，毫秒级完成。小杨继续工作，完全不知道刚才发生了什么。</p>
+
+                    <h3 id="layer2-failures">Session Memory Compact 的失败情况</h3>
+
+                    <p>以下 5 种情况会导致笔记方案失败，<strong>回退到全量压缩</strong>：</p>
+
+                    <ol>
+                        <li>功能 flag 没开</li>
+                        <li>笔记文件不存在（对话太短，还没触发过记笔记）</li>
+                        <li>笔记是空模板（文件创建了但还没写入内容）</li>
+                        <li>书签找不到（消息被外部修改过）</li>
+                        <li>压缩后仍然超标（笔记 + 保留消息 &gt; 阈值）</li>
+                    </ol>
+
+                    <h3 id="layer2-not-enough">当笔记系统也不够用时</h3>
+
+                    <p>大多数情况下，Session Memory 就够了。但有一种场景它搞不定：<strong>小杨在一个全新的项目上刚开始工作，才聊了 5 分钟，上下文就被几个巨大的文件读取撑到了 170K。</strong> 这时笔记文件还不存在（对话太短，没触发过记笔记），Session Memory Compact 直接失败。</p>
+
+                    <p>或者另一种情况：小杨输入了 <code>/compact 侧重错误日志</code>——带了自定义指令。但笔记是后台预先生成的，无法在压缩时临时调整侧重点，所以 Session Memory 也无法满足这个需求。</p>
+
+                    <p>这时候，系统回退到第 3 层：Full Compact。</p>
+
+                    <hr>
+
+                    <h2 id="layer3">第3层：全量压缩（Full Compact）</h2>
+
+                    <p><strong>Full Compact 是 Session Memory 的兜底方案</strong>，只在笔记系统出现上述失败情况，或用户通过 <code>/compact &lt;自定义指令&gt;</code> 主动要求时触发。</p>
+
+                    <p>它的代价更高——需要调 LLM 生成摘要，花费大量 output token，耗时 5-15 秒。但它能处理任何场景，包括笔记系统搞不定的那些。</p>
+
+                    <h3 id="layer3-flow">执行流程</h3>
+
+                    <ol>
+                        <li><strong>先跑微压缩</strong>——减少发给 LLM 的 token 量</li>
+                        <li><strong>图片剥离</strong>——替换为 <code>[image]</code> 文本标记，避免压缩请求本身撑爆上下文</li>
+                        <li><strong>技能附件剥离</strong>——移除 <code>skill_discovery</code>/<code>skill_listing</code> 类型附件（压缩后会重新注入）</li>
+                        <li><strong>Pre-Compact hooks</strong>——执行用户配置的预压缩钩子</li>
+                        <li><strong>fork 子代理生成摘要</strong>——使用精心设计的提示词（见<a href="#appendix-b">附录B</a>），要求先打草稿再写正文</li>
+                        <li><strong>prompt-too-long 重试</strong>——如果压缩请求本身太长，从最老消息开始逐步截断，最多重试 3 次</li>
+                        <li><strong>草稿剥离</strong>——<code>formatCompactSummary()</code> 删除 <code>&lt;analysis&gt;</code> 只保留 <code>&lt;summary&gt;</code></li>
+                        <li><strong>工作环境重建</strong>——并行生成文件附件、计划、技能、工具列表、代理列表、MCP 指令</li>
+                        <li><strong>SessionStart hooks</strong>——重新注入 CLAUDE.md 等上下文</li>
+                        <li><strong>Post-Compact hooks + 元数据维护</strong>——追加会话标题/标签</li>
+                    </ol>
+
+                    <p>小杨的场景（新项目，笔记不存在）：系统 fork 了一个子代理，把小杨这 5 分钟的完整对话发给它，让它生成一份结构化摘要。大约 8 秒后，摘要生成完毕，系统用它替换掉所有原始消息，再重建工作环境。小杨看到一条"对话已压缩"的提示，继续工作。</p>
+
+                    <h3 id="layer3-prompt">摘要提示词的设计要点</h3>
+
+                    <p>提示词经过精心设计（完整原文见<a href="#appendix-b">附录B</a>）：</p>
+
+                    <ul>
+                        <li><strong>双重封堵工具调用</strong>：开头和结尾都写了"绝对不许调工具"，因为 fork 的子代理继承了主对话的完整工具集</li>
+                        <li><strong>草稿区设计</strong>（<code>&lt;analysis&gt;</code> + <code>&lt;summary&gt;</code>）：花 output token 让模型"想清楚再写"，草稿事后删除不占后续上下文</li>
+                        <li><strong>9 个必须包含的章节</strong>：主要请求和意图、关键技术概念、文件和代码段、错误和修复、问题解决过程、所有用户消息、待办任务、当前工作、下一步</li>
+                        <li><strong>防止意图漂移</strong>：第 9 章节要求引用对话原文，确保对"我该继续做什么"不产生理解偏差</li>
+                    </ul>
+
+                    <h3 id="layer3-rebuild">重建上下文</h3>
+
+                    <p>LLM 只负责生成对话摘要。摘要完成后，系统用纯代码逻辑并行重建工作环境：</p>
+
+                    <table>
+                        <thead><tr><th>序号</th><th>内容</th></tr></thead>
+                        <tbody>
+                            <tr><td>①</td><td>边界标记（压缩前 token 数、已发现工具）</td></tr>
+                            <tr><td>②</td><td>LLM 生成的摘要</td></tr>
+                            <tr><td>③</td><td>最近读过的文件（最多 5 个，每个 5K token）</td></tr>
+                            <tr><td>④</td><td>当前计划文件</td></tr>
+                            <tr><td>⑤</td><td>计划模式指令</td></tr>
+                            <tr><td>⑥</td><td>已调用的技能内容（每个 5K，总预算 25K）</td></tr>
+                            <tr><td>⑦</td><td>延迟加载的工具列表</td></tr>
+                            <tr><td>⑧</td><td>可用代理列表</td></tr>
+                            <tr><td>⑨</td><td>MCP 服务器指令</td></tr>
+                            <tr><td>⑩</td><td>SessionStart hooks 结果（如 CLAUDE.md 注入）</td></tr>
+                        </tbody>
+                    </table>
+
+                    <h3 id="layer3-after">Full Compact 后笔记的处理</h3>
+
+                    <ul>
+                        <li><strong>笔记文件不清空</strong>——后续对话继续时后台会接着更新，保留旧笔记让"冷启动"期更短</li>
+                        <li><strong>书签会清空</strong>（<code>setLastSummarizedMessageId(undefined)</code>）</li>
+                    </ul>
+
+                    <p>存在一个"尴尬期"：Full Compact 后旧笔记与新对话不匹配，新书签还没打上。这段时间如果再触发压缩，Session Memory Compact 大概率失败，还是得走 Full Compact。</p>
+
+                    <hr>
+
+                    <h2 id="layer4">第4层：Snip（剪断）</h2>
+
+                    <p>前三层都是在"智能地替换"旧内容——要么替换工具结果，要么用笔记替换，要么用摘要替换。但 Snip 是最后的手段：<strong>直接从最老的消息开始物理删除，不做任何保留或替代。</strong></p>
+
+                    <p>Snip 是实验性功能（<code>feature('HISTORY_SNIP')</code> 门控），它不独立运行，而是<strong>和其他层配合</strong>——先 snip 释放空间，然后把释放量（<code>snipTokensFreed</code>）告诉 autocompact，让它判断还需不需要做更重的压缩。</p>
+
+                    <hr>
+
+                    <h2 id="comparison">Session Memory vs Full Compact 对比</h2>
 
                     <table>
                         <thead><tr><th></th><th>Session Memory Compact</th><th>Full Compact</th></tr></thead>
@@ -441,146 +384,91 @@ if (feature('HISTORY_SNIP')) {
                             <tr><td><strong>早期细节保留</strong></td><td>可能被后期内容挤掉</td><td>一次性看全貌，权衡保留</td></tr>
                             <tr><td><strong>最近上下文</strong></td><td>原始消息完整保留</td><td>全部被摘要替换</td></tr>
                             <tr><td><strong>结构化程度</strong></td><td>强（固定 9 个章节）</td><td>弱（LLM 自由发挥）</td></tr>
-                            <tr><td><strong>压缩比</strong></td><td>一般（还要保留原始消息）</td><td>更激进（可以压得更小）</td></tr>
+                            <tr><td><strong>压缩比</strong></td><td>一般（还要保留原始消息）</td><td>更激进</td></tr>
                         </tbody>
                     </table>
 
-                    <p>两者是<strong>互补关系</strong>而非替代关系。Session Memory 是日常压缩的主力，Full Compact 是兜底方案。</p>
+                    <p>两者是<strong>互补关系</strong>——Session Memory 是日常压缩主力，Full Compact 是兜底方案。</p>
 
                     <hr>
 
-                    <h2 id="manual-compact">手动 /compact 指令的实际行为</h2>
-
-                    <p>很多用户以为 <code>/compact</code> 就是直接把对话发给 LLM 让它总结一下。实际上远比这复杂——它有一套完整的决策链路，<strong>笔记系统是第一优先级，Full Compact 只是兜底</strong>：</p>
+                    <h2 id="manual-compact">手动 /compact 的实际行为</h2>
 
 <pre><code>/compact 指令执行流程：
 
 ① 有自定义指令吗？（比如 /compact 关注测试输出）
    ├─ 没有 → 先尝试 Session Memory Compact
-   │          成功？→ 完事，返回（毫秒级、零费用）
+   │          成功？→ 完事（毫秒级、零费用）
    │          失败？→ 继续往下
-   └─ 有 → 跳过 Session Memory（它不支持自定义指令）
+   └─ 有 → 跳过 Session Memory（它不支持自定义指令），直接走 Full Compact
 
-② 是否开启了 reactive-only 模式？
-   ├─ 是 → 走 reactive compact 路径
-   └─ 否 → 继续往下
+② 先跑一遍微压缩（减少发给 LLM 的 token 量）
+   → 再调 Full Compact</code></pre>
 
-③ 先跑一遍微压缩（减少发给 LLM 的 token 量）
-   → 再调 Full Compact（compactConversation）</code></pre>
+                    <p><strong>Session Memory 不支持自定义指令的原因</strong>：笔记是后台预先生成的，无法在压缩时临时按用户要求调整侧重点；而 Full Compact 是现场调 LLM，可以把自定义指令拼进提示词。</p>
 
-                    <h3>Full Compact 不是"直接发给 LLM 总结"</h3>
-
-                    <p>当 <code>/compact</code> 回退到 Full Compact 时，它执行的是一套复杂的专有逻辑，而不是简单地把对话扔给 LLM：</p>
-
-                    <ol>
-                        <li><strong>图片剥离</strong>——先把消息中的图片替换为 <code>[image]</code> 文本标记，避免压缩请求本身撑爆上下文</li>
-                        <li><strong>技能附件剥离</strong>——移除 <code>skill_discovery</code>/<code>skill_listing</code> 类型的附件（压缩后会重新注入）</li>
-                        <li><strong>Pre-Compact hooks</strong>——执行用户配置的预压缩钩子，可能产生额外的自定义指令</li>
-                        <li><strong>fork 子代理生成摘要</strong>——使用精心设计的提示词（见<a href="#appendix-b">附录B</a>），要求先打草稿再写正文</li>
-                        <li><strong>prompt-too-long 重试</strong>——如果压缩请求本身太长，会从最老的消息轮次开始逐步截断，最多重试 3 次</li>
-                        <li><strong>草稿剥离</strong>——<code>formatCompactSummary()</code> 删除 <code>&lt;analysis&gt;</code> 只保留 <code>&lt;summary&gt;</code></li>
-                        <li><strong>工作环境重建</strong>——并行生成文件附件、计划、技能、工具列表、代理列表、MCP 指令</li>
-                        <li><strong>SessionStart hooks</strong>——重新注入 CLAUDE.md 等上下文</li>
-                        <li><strong>Post-Compact hooks</strong>——执行后压缩钩子</li>
-                        <li><strong>元数据维护</strong>——重新追加会话标题/标签（防止被新消息推出 16KB 尾部窗口）</li>
-                    </ol>
-
-                    <p>关键细节：</p>
-
-                    <ul>
-                        <li><strong>不带参数的 <code>/compact</code></strong>：如果笔记文件存在且非空，大概率走 Session Memory Compact——毫秒级完成、零额外 API 费用</li>
-                        <li><strong>带参数的 <code>/compact 关注代码修改和测试结果</code></strong>：直接跳过 Session Memory（因为它不支持自定义指令），走 Full Compact，可以通过自定义指令引导 LLM 侧重总结特定内容</li>
-                        <li><strong>Session Memory 不支持自定义指令的原因</strong>：笔记是后台预先生成的，无法在压缩时临时按用户要求调整侧重点；而 Full Compact 是现场调 LLM，可以把自定义指令拼进提示词</li>
-                    </ul>
-
-                    <p>所以如果你想省钱且快速压缩，直接 <code>/compact</code> 即可；如果你想要更精准的摘要（比如某次会话重点是调试，你希望摘要侧重错误信息），就用 <code>/compact &lt;你的指令&gt;</code> 强制走 Full Compact。</p>
+                    <p><strong>实用建议</strong>：想省钱且快速→直接 <code>/compact</code>；想要侧重特定内容的精准摘要→ <code>/compact &lt;你的指令&gt;</code> 强制走 Full Compact。</p>
 
                     <hr>
 
-                    <h2 id="philosophy">核心设计哲学</h2>
-
-                    <p>从整个压缩系统中可以提炼出几条 Agent 开发的通用经验：</p>
-
-                    <h3>1. "分期付款"优于"一次性结清"</h3>
-
-                    <p>Session Memory 的精髓是把压缩成本分散到整个对话过程中——边聊边记笔记，每次花一点点小钱，到真正需要压缩时直接用现成的笔记，免费且瞬时。这比等到上下文满了再花一大笔钱做全量压缩要经济得多。</p>
-
-                    <h3>2. "尽量不破坏缓存"贯穿始终</h3>
-
-                    <p>从 cache_edits 的隔空删除、到时间过期检测、到 fork 子代理共享 prompt cache 前缀——整个系统围绕"保住缓存"来设计。因为 prompt cache 命中时的价格通常是正常价格的 1/10，这对 token 消耗大户的 Agent 来说意味着数量级的成本差异。</p>
-
-                    <h3>3. 层层递进、优雅降级</h3>
-
-                    <p>不是只有一种压缩方案，而是四层递进——能不丢就不丢，能少丢就少丢，非丢不可就先用结构化笔记替代，笔记不够才花钱让 LLM 写摘要，实在撑不住才物理删除。每一层都有明确的失败条件和回退路径。</p>
-
-                    <h3>4. 安全不变量优先</h3>
-
-                    <p>压缩过程中有大量的"不变量守卫"：</p>
-                    <ul>
-                        <li><code>tool_use</code> 和 <code>tool_result</code> 不能拆开（<code>adjustIndexToPreserveAPIInvariants</code>）</li>
-                        <li>同一个 <code>message.id</code> 的 thinking 块不能丢失</li>
-                        <li>压缩后的 token 数要确保低于阈值，否则放弃</li>
-                        <li>熔断器防止无限重试</li>
-                    </ul>
-
-                    <h3>5. 务实的工程权衡</h3>
-
-                    <p>笔记系统不做"信息是否完整覆盖"的精确验证，Full Compact 允许信息在摘要中被概括性地压缩。整个系统接受"少量信息丢失"作为可接受的代价——因为替代方案是"上下文溢出，对话被迫终止"，这明显更糟。每一层压缩都在信息保留、成本、延迟之间做了不同的取舍，没有完美方案，只有适合当下场景的方案。</p>
-
-                    <hr>
-
-                    <h2 id="conclusion">总结与实用建议</h2>
-
-                    <h3 id="conclusion-summary">系统总结</h3>
-
-                    <p>Claude Code 的上下文压缩不是一个简单的"砍掉旧消息"，而是一个<strong>四层递进、缓存感知、成本敏感</strong>的精密系统。它的核心思想可以用一句话概括：</p>
-
-                    <p><strong>在有限的上下文窗口里塞尽可能多的有效信息，同时尽量不破坏 prompt cache 以节省成本。</strong></p>
-
-                    <p>这套系统对 Agent 开发者的最大启示是：<strong>上下文管理不是事后补丁，而是需要从第一天就纳入架构设计的核心问题。</strong> 当你的 Agent 需要处理长会话时，你面对的不只是"删什么"的问题，还有"什么时候删"、"删了之后怎么恢复工作环境"、"怎么在信息保留和成本之间取得平衡"等一系列系统性问题。Claude Code 的实现提供了一个工程化程度极高的参考答案。</p>
-
-                    <h3 id="conclusion-backup">被压缩的上下文在本地有完整备份</h3>
-
-                    <p>一个容易被忽略但非常重要的事实是：<strong>你和 AI 的每一轮完整对话都在本地有持久化备份。</strong></p>
-
-                    <p>每个会话的完整消息记录以 JSONL 格式写在本地磁盘上：</p>
-
-<pre><code>~/.claude/projects/&lt;项目路径哈希&gt;/&lt;session-id&gt;.jsonl</code></pre>
-
-                    <p>压缩<strong>不会修改这个文件</strong>——它只替换内存中的消息数组。Transcript 文件是追加写入的，旧消息永远不会被删除。所有工具调用、执行结果、AI 的推理过程都完整保留。</p>
-
-                    <p>压缩后，系统会在摘要消息中用一句纯文本告诉 AI 这个文件的路径：</p>
-
-<pre><code>If you need specific details from before compaction (like exact code
-snippets, error messages, or content you generated), read the full
-transcript at: /Users/xxx/.claude/projects/abc123/session-456.jsonl</code></pre>
-
-                    <p>如果 AI 发现摘要里的信息不够用（比如需要某个精确的代码片段），它可以自己用 FileRead 工具去读这个文件来找回细节。没有自动读取、没有索引、没有搜索，完全靠 AI 自行判断"我需不需要去翻旧记录"。</p>
-
-                    <h3 id="conclusion-compact-vs-clear">/compact vs /clear：能不 clear 就别 clear</h3>
+                    <h2 id="compact-vs-clear">/compact vs /clear</h2>
 
                     <table>
                         <thead><tr><th></th><th><code>/compact</code></th><th><code>/clear</code></th></tr></thead>
                         <tbody>
-                            <tr><td><strong>上下文</strong></td><td>压缩为摘要/笔记，保留核心信息</td><td>彻底清空，一条不留</td></tr>
+                            <tr><td><strong>上下文</strong></td><td>压缩为摘要/笔记，保留核心信息</td><td>彻底清空</td></tr>
                             <tr><td><strong>Transcript</strong></td><td>完整保留，AI 可以回读</td><td>文件还在，但新 session ID，AI 不知道旧文件路径</td></tr>
-                            <tr><td><strong>笔记文件</strong></td><td>继续使用，下次压缩更快</td><td>文件还在但书签丢了，需要重新积累</td></tr>
+                            <tr><td><strong>笔记文件</strong></td><td>继续使用</td><td>文件还在但书签丢了</td></tr>
                             <tr><td><strong>Session ID</strong></td><td>不变</td><td>重新生成</td></tr>
                             <tr><td><strong>工作状态</strong></td><td>文件缓存、计划、技能都重建</td><td>全部清空重置</td></tr>
                         </tbody>
                     </table>
 
-                    <p><code>/compact</code> 相当于"压缩行李继续旅行"——信息被浓缩了，但旅途的记忆还在，随时可以翻阅旧日记（transcript）找回细节。</p>
+                    <p><strong>建议：能用 <code>/compact</code> 就不要用 <code>/clear</code>。</strong></p>
 
-                    <p><code>/clear</code> 相当于"扔掉所有行李重新出发"——旧的 transcript 文件虽然还在磁盘上，但新会话的 AI 不知道它的存在，无法自动回溯。</p>
+                    <p>每个会话的完整消息记录以 JSONL 格式持久化在本地：</p>
 
-                    <p><strong>建议：能用 <code>/compact</code> 就不要用 <code>/clear</code>。</strong> 未来模型支持更大的上下文窗口时，transcript 中保存的完整历史会更有价值——你可以通过让 AI 读取 transcript 文件的方式恢复之前的工作上下文，而不用重新描述整个任务背景。这也是 Claude Code 选择把完整历史持久化到磁盘的深层原因：<strong>当前的上下文窗口限制是暂时的，但对话历史的价值是长期的。</strong></p>
+<pre><code>~/.claude/projects/&lt;项目路径哈希&gt;/&lt;session-id&gt;.jsonl</code></pre>
+
+                    <p>压缩<strong>不会修改这个文件</strong>——它只替换内存中的消息数组，Transcript 文件是追加写入的，旧消息永远不会被删除。压缩后系统会告诉 AI 这个文件的路径，AI 需要时可以自己用 FileRead 去找回细节。</p>
+
+                    <p>回到小杨：不管他经历了多少次压缩，他所有的对话、每一次工具调用、每一段 AI 的推理过程，都完整地保存在那个 JSONL 文件里。未来模型支持更大上下文窗口时，这些完整历史会更有价值——这也是 Claude Code 选择持久化到磁盘的深层原因：<strong>当前的上下文窗口限制是暂时的，但对话历史的价值是长期的。</strong></p>
+
+                    <hr>
+
+                    <h2 id="philosophy">核心设计哲学</h2>
+
+                    <h3>1. "分期付款"优于"一次性结清"</h3>
+
+                    <p>Session Memory 把压缩成本分散到整个对话过程——边聊边记笔记，每次花一点小钱，到真正需要压缩时直接用现成笔记，免费且瞬时。</p>
+
+                    <h3>2. "尽量不破坏缓存"贯穿始终</h3>
+
+                    <p>从 cache_edits 的隔空删除、到时间过期检测、到 fork 子代理共享 prompt cache 前缀——整个系统围绕"保住缓存"来设计。Prompt cache 命中价格是正常价格的 1/10，对 token 消耗大户意味着数量级的成本差异。</p>
+
+                    <h3>3. 层层递进、优雅降级</h3>
+
+                    <p>回顾小杨的完整经历就能看出这套哲学：工具结果过期了→微压缩清理掉（零损失）；对话太长了→用预先积累的笔记替代（轻微信息损失，但免费）；笔记不可用→调 LLM 写摘要（花钱但全面）；实在撑不住→物理删除（最后手段）。每一层都有明确的失败条件和回退路径。</p>
+
+                    <h3>4. 安全不变量优先</h3>
+
+                    <p>压缩过程中有大量"不变量守卫"：</p>
+                    <ul>
+                        <li><code>tool_use</code> 和 <code>tool_result</code> 不能拆开（<code>adjustIndexToPreserveAPIInvariants</code>）</li>
+                        <li>同一 <code>message.id</code> 的 thinking 块不能丢失</li>
+                        <li>压缩后 token 数要确保低于阈值，否则放弃</li>
+                        <li>熔断器防止无限重试</li>
+                    </ul>
+
+                    <h3>5. 务实的工程权衡</h3>
+
+                    <p>笔记系统不做"信息是否完整覆盖"的精确验证，Full Compact 允许信息被概括性压缩。整个系统接受"少量信息丢失"——因为替代方案是"上下文溢出、对话被迫终止"，这明显更糟。</p>
 
                     <hr>
 
                     <h2 id="appendix-a">附录A：Session Memory 更新提示词</h2>
 
-                    <p>以下是后台子代理更新笔记时收到的完整提示词（源码位于 <code>src/services/SessionMemory/prompts.ts</code>）。其中 <code>{{currentNotes}}</code> 和 <code>{{notesPath}}</code> 会被替换为笔记文件的当前内容和路径：</p>
+                    <p>以下是后台子代理更新笔记时收到的完整提示词（源码位于 <code>src/services/SessionMemory/prompts.ts</code>）。<code>{{currentNotes}}</code> 和 <code>{{notesPath}}</code> 会被替换为笔记文件的当前内容和路径：</p>
 
 <pre><code>IMPORTANT: This message and these instructions are NOT part of the actual
 user conversation. Do NOT include any references to "note-taking",
@@ -652,7 +540,7 @@ the edits. Only include insights from the actual user conversation, never
 from these note-taking instructions. Do not delete or change section
 headers or italic _section descriptions_.</code></pre>
 
-                    <p>当笔记总量超过 12,000 token 或某个章节超过 2,000 token 时，系统会在提示词末尾追加额外的警告，要求子代理积极精简超标章节。</p>
+                    <p>当笔记总量超过 12,000 token 或某个章节超过 2,000 token 时，系统会在提示词末尾追加额外警告，要求子代理积极精简超标章节。</p>
 
                     <p>笔记的默认模板（9 个章节）如下：</p>
 
@@ -698,7 +586,7 @@ _Step by step, what was attempted, done? Very terse summary for each step_</code
 
                     <h2 id="appendix-b">附录B：Full Compact 压缩提示词</h2>
 
-                    <p>以下是 Full Compact 时发给子代理的完整提示词（源码位于 <code>src/services/compact/prompt.ts</code>）。这段提示词的目标是让 LLM 生成一份结构化的对话摘要：</p>
+                    <p>以下是 Full Compact 时发给子代理的完整提示词（源码位于 <code>src/services/compact/prompt.ts</code>）：</p>
 
 <pre><code>CRITICAL: Respond with TEXT ONLY. Do NOT call any tools.
 
@@ -772,24 +660,92 @@ Your summary should include the following sections:
    you left off. This should be verbatim to ensure there's no drift in
    task interpretation.
 
+&lt;example&gt;
+&lt;analysis&gt;
+[Your thought process, ensuring all points are covered thoroughly
+and accurately]
+&lt;/analysis&gt;
+
+&lt;summary&gt;
+1. Primary Request and Intent:
+   [Detailed description]
+
+2. Key Technical Concepts:
+   - [Concept 1]
+   - [Concept 2]
+   - [...]
+
+3. Files and Code Sections:
+   - [File Name 1]
+      - [Summary of why this file is important]
+      - [Summary of the changes made to this file, if any]
+      - [Important Code Snippet]
+   - [...]
+
+4. Errors and fixes:
+    - [Detailed description of error 1]:
+      - [How you fixed the error]
+      - [User feedback on the error if any]
+    - [...]
+
+5. Problem Solving:
+   [Description of solved problems and ongoing troubleshooting]
+
+6. All user messages:
+    - [Detailed non tool use user message]
+    - [...]
+
+7. Pending Tasks:
+   - [Task 1]
+   - [Task 2]
+   - [...]
+
+8. Current Work:
+   [Precise description of current work]
+
+9. Optional Next Step:
+   [Optional Next step to take]
+
+&lt;/summary&gt;
+&lt;/example&gt;
+
+Please provide your summary based on the conversation so far, following
+this structure and ensuring precision and thoroughness in your response.
+
+There may be additional summarization instructions provided in the
+included context. If so, remember to follow these instructions when
+creating the above summary. Examples of instructions include:
+
+&lt;example&gt;
+## Compact Instructions
+When summarizing the conversation focus on typescript code changes and
+also remember the mistakes you made and how you fixed them.
+&lt;/example&gt;
+
+&lt;example&gt;
+# Summary instructions
+When you are using compact - please focus on test output and code
+changes. Include file reads verbatim.
+&lt;/example&gt;
+
 REMINDER: Do NOT call any tools. Respond with plain text only — an
 &lt;analysis&gt; block followed by a &lt;summary&gt; block. Tool calls will be
 rejected and you will fail the task.</code></pre>
 
-                    <p><strong>要点解读：</strong></p>
+                    <p><strong>要点解读</strong>：</p>
                     <ul>
                         <li>开头和结尾<strong>双重封堵</strong>工具调用，防止继承的工具集干扰</li>
                         <li><code>&lt;analysis&gt;</code> 草稿区让模型先思考，<code>formatCompactSummary()</code> 事后删除，不浪费后续上下文空间</li>
-                        <li>第 9 章节要求<strong>引用对话原文</strong>，这是防止"意图漂移"的关键设计</li>
-                        <li>末尾提到的"additional summarization instructions"就是用户通过 <code>/compact &lt;自定义指令&gt;</code> 传入的内容</li>
+                        <li>第 9 章节要求<strong>引用对话原文</strong>，防止"意图漂移"</li>
+                        <li>末尾的 "additional summarization instructions" 就是用户通过 <code>/compact &lt;自定义指令&gt;</code> 传入的内容</li>
                     </ul>
 
                 </div>
             </article>
 
             <div class="article-nav">
-                <a href="context-assembly-author-note.html">← 上一篇</a>
-                <a href="../index.html">返回首页 →</a>
+                <a href="context-assembly-author-note.html">&larr; 上一篇</a>
+                <a href="../index.html">返回首页 &rarr;</a>
             </div>
         </div>
     </div>
