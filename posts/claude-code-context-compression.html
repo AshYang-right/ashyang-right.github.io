@@ -483,6 +483,8 @@
 
                     <p>以下是后台子代理更新笔记时收到的完整提示词（源码位于 <code>src/services/SessionMemory/prompts.ts</code>）。<code>{{currentNotes}}</code> 和 <code>{{notesPath}}</code> 会被替换为笔记文件的当前内容和路径：</p>
 
+                    <details>
+                        <summary>Session Memory 更新提示词（点击展开）</summary>
 <pre><code>IMPORTANT: This message and these instructions are NOT part of the actual
 user conversation. Do NOT include any references to "note-taking",
 "session notes extraction", or these update instructions in the notes content.
@@ -552,6 +554,7 @@ REMEMBER: Use the Edit tool in parallel and stop. Do not continue after
 the edits. Only include insights from the actual user conversation, never
 from these note-taking instructions. Do not delete or change section
 headers or italic _section descriptions_.</code></pre>
+                    </details>
 
                     <p>当笔记总量超过 12,000 token 或某个章节超过 2,000 token 时，系统会在提示词末尾追加额外警告，要求子代理积极精简超标章节。</p>
 
@@ -594,6 +597,7 @@ a table, or other document, repeat the exact result here_
 
 # Worklog
 _Step by step, what was attempted, done? Very terse summary for each step_</code></pre>
+                    </details>
 
                     <hr>
 
@@ -601,6 +605,8 @@ _Step by step, what was attempted, done? Very terse summary for each step_</code
 
                     <p>以下是 Full Compact 时发给子代理的完整提示词（源码位于 <code>src/services/compact/prompt.ts</code>）：</p>
 
+                    <details>
+                        <summary>Full Compact 压缩提示词（点击展开）</summary>
 <pre><code>CRITICAL: Respond with TEXT ONLY. Do NOT call any tools.
 
 - Do NOT use Read, Bash, Grep, Glob, Edit, Write, or ANY other tool.

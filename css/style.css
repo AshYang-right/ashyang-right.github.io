@@ -520,6 +520,62 @@ img {
     color: var(--color-accent);
 }
 
+/* Collapsible code blocks */
+.article-content details {
+    margin: 24px 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.article-content details summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: var(--color-bg-warm);
+    color: var(--color-text-secondary);
+    font-family: var(--font-serif);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    transition: all 0.2s ease;
+}
+
+.article-content details summary::-webkit-details-marker {
+    display: none;
+}
+
+.article-content details summary::before {
+    content: "▶";
+    font-size: 0.7em;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.article-content details[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.article-content details summary:hover {
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+}
+
+.article-content details > pre {
+    margin: 0;
+    border-radius: 0;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.article-content details > pre code {
+    display: block;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
 .article-content pre {
     background: var(--color-text);
     color: #e8e2d8;
