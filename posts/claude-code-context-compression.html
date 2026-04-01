@@ -33,7 +33,6 @@
                 <li><a href="#scenario" class="toc-h3">一个具体的场景</a></li>
                 <li><a href="#architecture">整体架构：四层压缩梯队</a></li>
                 <li><a href="#threshold" class="toc-h3">什么时候算"快满了"</a></li>
-                <li><a href="#pipeline" class="toc-h3">完整的执行流水线</a></li>
                 <li><a href="#layer1">第1层：微压缩（MicroCompact）</a></li>
                 <li><a href="#layer1-path-a" class="toc-h3">路径A：缓存已冷 → 直接清空</a></li>
                 <li><a href="#layer1-path-b" class="toc-h3">路径B：缓存还热 → cache_edits</a></li>
@@ -53,9 +52,10 @@
                 <li><a href="#layer3-rebuild" class="toc-h3">重建上下文</a></li>
                 <li><a href="#layer3-after" class="toc-h3">Full Compact 后笔记的处理</a></li>
                 <li><a href="#layer4">第4层：Snip（剪断）</a></li>
+                <li><a href="#pipeline">回看全景：完整的执行流水线</a></li>
                 <li><a href="#comparison">Session Memory vs Full Compact 对比</a></li>
                 <li><a href="#manual-compact">手动 /compact 的实际行为</a></li>
-                <li><a href="#compact-vs-clear">/compact vs /clear</a></li>
+                <li><a href="#compact-vs-clear" class="toc-h3">/compact vs /clear</a></li>
                 <li><a href="#philosophy">核心设计哲学</a></li>
                 <li><a href="#appendix-a">附录A：Session Memory 更新提示词</a></li>
                 <li><a href="#appendix-b">附录B：Full Compact 压缩提示词</a></li>
@@ -133,21 +133,7 @@
                         <p>回到小杨的场景：他的上下文已经 160K，还没到 167K 的阈值。但他接下来又让 AI 读了两个大文件（各 5K），token 飙到 170K——<strong>触发了自动压缩</strong>。</p>
                     </div>
 
-                    <p>还有一个<strong>熔断器</strong>机制：连续 3 次压缩失败就停止尝试，避免无限重试。这个设计来自真实线上数据——曾有用户单个会话连续失败 3272 次，每天全球浪费约 25 万次 API 调用。</p>
-
-                    <h3 id="pipeline">完整的执行流水线</h3>
-
-                    <p>每次用户发送消息后，在调 API 之前，上下文要经过 7 步预处理：</p>
-
-                    <ol>
-                        <li><strong>裁切旧历史</strong> — 如果之前做过压缩，只保留压缩点之后的消息</li>
-                        <li><strong>大结果存磁盘</strong> — 单个工具结果 &gt; 50K 字符写磁盘，单条消息所有工具结果 &gt; 200K 字符也持久化</li>
-                        <li><strong>Snip</strong> — 从最老的消息开始物理删除，释放空间</li>
-                        <li><strong>微压缩</strong> — 时间过期→清空旧工具结果；缓存还热→cache_edits 隔空删除</li>
-                        <li><strong>上下文折叠</strong> — 把某些段落折叠成摘要（实验性功能）</li>
-                        <li><strong>自动压缩判断</strong> — 先尝试 Session Memory Compact，失败则 Full Compact</li>
-                        <li><strong>拼装 API 请求</strong> — 系统提示 + 用户上下文 + 消息标准化 + 缓存标记 → 发送给 API</li>
-                    </ol>
+                    <p>还有一个保险机制——<strong>熔断器</strong>：连续 3 次压缩失败就停止尝试，避免无限重试。这个设计来自真实线上数据——曾有用户单个会话连续失败 3272 次，每天全球浪费约 25 万次 API 调用。</p>
 
                     <div class="story-line">
                         <p>小杨的 170K 请求进来后，系统首先尝试的是第 1 层——微压缩。</p>
@@ -262,7 +248,7 @@
 
                     <h3 id="layer2-relation">笔记与上下文的关系</h3>
 
-                    <p>笔记和上下文之间是<strong>单向提取</strong>——上下文内容被提取进笔记，但笔记不会反向给上下文中的消息打标签。书签只记录一个时间点位，不做消息与笔记章节的精确映射。</p>
+                    <p>笔记和上下文之间是<strong>单向的</strong>——信息只从上下文流向笔记，不会反向标记。书签只记录一个时间点位，不做消息与笔记章节的精确映射。</p>
 
                     <p>这意味着存在<strong>信息对齐的模糊地带</strong>：笔记总量上限 12K token，多次更新后旧内容会被新内容挤掉。压缩时删除书签之前的所有消息，但笔记里可能已不包含那些早期消息的某些细节——这部分信息会永久丢失。系统<strong>不做验证</strong>，这是一个有意的工程权衡。</p>
 
@@ -381,9 +367,25 @@
 
                     <h2 id="layer4">第4层：Snip（剪断）</h2>
 
-                    <p>前三层都是在"智能地替换"旧内容——要么替换工具结果，要么用笔记替换，要么用摘要替换。但 Snip 是最后的手段：<strong>直接从最老的消息开始物理删除，不做任何保留或替代。</strong></p>
+                    <p>前三层都在"用更精简的东西替代旧内容"——清理工具结果、用笔记替代旧对话、用摘要替代全部消息。Snip 不一样，它是最后的手段：<strong>直接从最老的消息开始物理删除，不留任何替代品。</strong></p>
 
                     <p>Snip 是实验性功能（<code>feature('HISTORY_SNIP')</code> 门控），它不独立运行，而是<strong>和其他层配合</strong>——先 snip 释放空间，然后把释放量（<code>snipTokensFreed</code>）告诉 autocompact，让它判断还需不需要做更重的压缩。</p>
+
+                    <hr>
+
+                    <h2 id="pipeline">回看全景：完整的执行流水线</h2>
+
+                    <p>四层讲完了，现在回到全局视角。每次用户发送消息后，在调 API 之前，上下文要经过 7 步预处理：</p>
+
+                    <ol>
+                        <li><strong>裁切旧历史</strong> — 如果之前做过压缩，只保留压缩点之后的消息</li>
+                        <li><strong>大结果存磁盘</strong> — 单个工具结果 &gt; 50K 字符写磁盘，单条消息所有工具结果 &gt; 200K 字符也持久化</li>
+                        <li><strong>Snip</strong> — 从最老的消息开始物理删除，释放空间</li>
+                        <li><strong>微压缩</strong> — 时间过期→清空旧工具结果；缓存还热→cache_edits 隔空删除</li>
+                        <li><strong>上下文折叠</strong> — 把某些段落折叠成摘要（实验性功能）</li>
+                        <li><strong>自动压缩判断</strong> — 先尝试 Session Memory Compact，失败则 Full Compact</li>
+                        <li><strong>拼装 API 请求</strong> — 系统提示 + 用户上下文 + 消息标准化 + 缓存标记 → 发送给 API</li>
+                    </ol>
 
                     <hr>
 
@@ -423,9 +425,7 @@
 
                     <p><strong>实用建议</strong>：想省钱且快速→直接 <code>/compact</code>；想要侧重特定内容的精准摘要→ <code>/compact &lt;你的指令&gt;</code> 强制走 Full Compact。</p>
 
-                    <hr>
-
-                    <h2 id="compact-vs-clear">/compact vs /clear</h2>
+                    <h3 id="compact-vs-clear"><code>/compact</code> vs <code>/clear</code>：能不 clear 就别 clear</h3>
 
                     <table>
                         <thead><tr><th></th><th><code>/compact</code></th><th><code>/clear</code></th></tr></thead>
@@ -437,8 +437,6 @@
                             <tr><td><strong>工作状态</strong></td><td>文件缓存、计划、技能都重建</td><td>全部清空重置</td></tr>
                         </tbody>
                     </table>
-
-                    <p><strong>建议：能用 <code>/compact</code> 就不要用 <code>/clear</code>。</strong></p>
 
                     <p>每个会话的完整消息记录以 JSONL 格式持久化在本地：</p>
 
