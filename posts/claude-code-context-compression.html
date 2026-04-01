@@ -41,8 +41,7 @@
                 <li><a href="#layer2">第2层：会话记忆压缩</a></li>
                 <li><a href="#layer2-what" class="toc-h3">什么是 Session Memory</a></li>
                 <li><a href="#layer2-update" class="toc-h3">笔记的更新机制</a></li>
-                <li><a href="#layer2-model" class="toc-h3">子代理的模型与缓存省钱</a></li>
-                <li><a href="#layer2-relation" class="toc-h3">笔记与上下文的关系</a></li>
+                <li><a href="#layer2-impl" class="toc-h3">实现细节：子代理与缓存</a></li>
                 <li><a href="#layer2-compact" class="toc-h3">压缩时怎么用笔记</a></li>
                 <li><a href="#layer2-failures" class="toc-h3">失败情况</a></li>
                 <li><a href="#layer2-not-enough" class="toc-h3">当笔记系统也不够用时</a></li>
@@ -231,11 +230,9 @@
 
                     <p>记完笔记后，系统在最后一条消息上打<strong>书签</strong>（<code>lastSummarizedMessageId</code>）。安全检查：如果最后一轮 assistant 还有工具调用未完成，不更新书签，避免把 <code>tool_use</code> 和 <code>tool_result</code> 拆开导致 API 报错。</p>
 
-                    <h3 id="layer2-model">子代理的模型、API Key 和缓存省钱机制</h3>
+                    <h3 id="layer2-impl">实现细节：子代理与缓存</h3>
 
-                    <p><strong>模型</strong>：与主对话完全一致，继承 <code>parentContext.options</code>。用 Sonnet 对话就是 Sonnet，用 Opus 就是 Opus。</p>
-
-                    <p><strong>API Key</strong>：与主对话共用。记笔记在主对话 AI 回复完成后才触发，不会同时调 API。<code>sequential()</code> 包装器保证同时只有一个记笔记任务在跑。</p>
+                    <p><strong>子代理的模型和 API Key</strong>：与主对话完全一致，继承 <code>parentContext.options</code>，共用同一个 API Key。记笔记在主对话回复完成后才触发，<code>sequential()</code> 包装器保证同时只有一个记笔记任务在跑。</p>
 
                     <p><strong>Prompt Cache 省钱原理</strong>：主对话和子代理发送的内容有大量重复前缀（系统提示 + 工具定义 + 对话历史），服务器发现前缀相同就复用缓存。</p>
 
@@ -246,9 +243,7 @@
 
                     <p>这就是为什么 <code>CacheSafeParams</code> 要确保子代理的前缀和主对话<strong>完全一致</strong>——差一个字节缓存就不命中。</p>
 
-                    <h3 id="layer2-relation">笔记与上下文的关系</h3>
-
-                    <p>笔记和上下文之间是<strong>单向的</strong>——信息只从上下文流向笔记，不会反向标记。书签只记录一个时间点位，不做消息与笔记章节的精确映射。</p>
+                    <p><strong>笔记与上下文的关系</strong>：信息只从上下文流向笔记，不会反向标记。书签只记录一个时间点位，不做消息与笔记章节的精确映射。</p>
 
                     <p>这意味着存在<strong>信息对齐的模糊地带</strong>：笔记总量上限 12K token，多次更新后旧内容会被新内容挤掉。压缩时删除书签之前的所有消息，但笔记里可能已不包含那些早期消息的某些细节——这部分信息会永久丢失。系统<strong>不做验证</strong>，这是一个有意的工程权衡。</p>
 
@@ -466,9 +461,9 @@
                         <p>回顾小杨的完整经历就能看出这套哲学：工具结果过期了→微压缩清理掉（零损失）；对话太长了→用预先积累的笔记替代（轻微信息损失，但免费）；笔记不可用→调 LLM 写摘要（花钱但全面）；实在撑不住→物理删除（最后手段）。每一层都有明确的失败条件和回退路径。</p>
                     </div>
 
-                    <h3>4. 安全不变量优先</h3>
+                    <h3>4. 安全优先，务实权衡</h3>
 
-                    <p>压缩过程中有大量"不变量守卫"：</p>
+                    <p>压缩过程中有大量"不变量守卫"，确保不会因为压缩而破坏 API 协议：</p>
                     <ul>
                         <li><code>tool_use</code> 和 <code>tool_result</code> 不能拆开（<code>adjustIndexToPreserveAPIInvariants</code>）</li>
                         <li>同一 <code>message.id</code> 的 thinking 块不能丢失</li>
@@ -476,13 +471,15 @@
                         <li>熔断器防止无限重试</li>
                     </ul>
 
-                    <h3>5. 务实的工程权衡</h3>
-
-                    <p>笔记系统不做"信息是否完整覆盖"的精确验证，Full Compact 允许信息被概括性压缩。整个系统接受"少量信息丢失"——因为替代方案是"上下文溢出、对话被迫终止"，这明显更糟。</p>
+                    <p>同时，系统也接受"少量信息丢失"——笔记系统不做"信息是否完整覆盖"的精确验证，Full Compact 允许信息被概括性压缩。因为替代方案是"上下文溢出、对话被迫终止"，这明显更糟。</p>
 
                     <hr>
 
                     <h2 id="appendix-a">附录A：Session Memory 更新提示词</h2>
+
+                    <blockquote>
+                        <p>以下两个附录为源码原文引用，供深入研究参考，跳过不影响理解正文。</p>
+                    </blockquote>
 
                     <p>以下是后台子代理更新笔记时收到的完整提示词（源码位于 <code>src/services/SessionMemory/prompts.ts</code>）。<code>{{currentNotes}}</code> 和 <code>{{notesPath}}</code> 会被替换为笔记文件的当前内容和路径：</p>
 
