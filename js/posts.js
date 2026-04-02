@@ -4,6 +4,13 @@
  */
 const POSTS = [
     {
+        slug: "character-palette-prompt-engineering",
+        title: "角色调色盘：用相对量化的提示词工程刻画一个「活人」",
+        date: "2026-04-02",
+        summary: "如何让 AI 写出有血肉的角色？本文从性格、语气、记忆三个维度，展示一套「相对量化」的提示词工程方法——用调色盘结构定义性格维度，用语料样本模拟说话风格，用认知滤镜构建角色记忆。不依赖任何外部数据，仅通过结构化描述，让角色从无到有地变得丰富且真实。",
+        tags: ["AI", "提示词工程", "角色设计", "上下文工程"]
+    },
+    {
         slug: "claude-code-context-compression",
         title: "深度解析 Claude Code 的上下文压缩机制",
         date: "2026-03-31",
