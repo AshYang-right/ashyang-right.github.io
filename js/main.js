@@ -87,10 +87,11 @@
         fetch("posts/" + post.slug + ".html")
             .then(function (res) { return res.text(); })
             .then(function (html) {
-                var match = html.match(/<h1[^>]*class="article-title"[^>]*>(.*?)<\/h1>/);
-                if (!match) match = html.match(/<header[\s\S]*?<h1[^>]*>(.*?)<\/h1>/);
+                var match = html.match(/<h1[^>]*class="article-title"[^>]*>([\s\S]*?)<\/h1>/);
+                if (!match) match = html.match(/<article-header[\s\S]*?<h1[^>]*>([\s\S]*?)<\/h1>/);
+                if (!match) match = html.match(/<h1>([\s\S]*?)<\/h1>/);
                 if (match && match[1]) {
-                    var realTitle = match[1].replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+                    var realTitle = match[1].replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
                     if (realTitle !== post.title) {
                         post.title = realTitle;
                         var card = listEl.querySelector('[data-slug="' + post.slug + '"]');
