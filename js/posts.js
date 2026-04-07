@@ -33,7 +33,7 @@ const POSTS = [
     },
     {
         slug: "intelligent-npc-architecture",
-        title: "构建沉浸世界的智能 NPC（一）Context is all you need !",
+        title: "构建沉浸世界的智能 NPC：Context is All You Need",
         date: "2026-03-27",
         summary: "为Unity游戏构建了一套完整的AI NPC对话系统，让NPC能够根据世界观、角色人设、游戏状态进行智能对话。本文以幽灵公主艾琳娜的案例为线索，展示系统从传统预设对话到完整AI对话系统的八个演进阶段。",
         tags: ["AI", "游戏开发", "NPC对话", "架构设计", "智能NPC系列"]
