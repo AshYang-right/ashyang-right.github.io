@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>构建沉浸世界的智能 NPC（二）Context Assembly &amp; Author's Note - Ash's Blog</title>
+    <title>构建沉浸世界的智能 NPC（二）：Context Assembly &amp; Author's Note - Ash's Blog</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,600&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
@@ -30,17 +30,15 @@
             <ul class="toc-list" id="toc-list">
                 <li><a href="#problem1">第一个问题：静止的世界没有体验</a></li>
                 <li><a href="#time-solution" class="toc-h3">解决方案：引入时间</a></li>
-                <li><a href="#time-calendar" class="toc-h3">给游戏世界一套历法</a></li>
-                <li><a href="#time-knowledge" class="toc-h3">时间决定"谁知道什么"</a></li>
-                <li><a href="#time-hooks" class="toc-h3">在剧本中安排时间钩子</a></li>
-                <li><a href="#time-power" class="toc-h3">用一句对话看时间的力量</a></li>
+                <li><a href="#time-calendar" class="toc-h4">1. 给游戏世界一套历法</a></li>
+                <li><a href="#time-knowledge" class="toc-h4">2. 时间决定"谁知道什么"</a></li>
+                <li><a href="#time-hooks" class="toc-h4">3. 在剧本中安排时间钩子</a></li>
+                <li><a href="#time-power" class="toc-h4">时间的力量——以及它管不了的事</a></li>
                 <li><a href="#problem2">第二个问题：谁来引导玩家？</a></li>
-                <li><a href="#author-note" class="toc-h3">Author's Note：场外的导演</a></li>
                 <li><a href="#an-l1" class="toc-h3">形式一：常驻导演笔记（L1）</a></li>
                 <li><a href="#an-l2l3" class="toc-h3">形式二：动态导演指令（L2/L3）</a></li>
                 <li><a href="#an-timeline" class="toc-h3">用年份维度看剧情推进</a></li>
                 <li><a href="#problem3">第三个问题：如何控制导演的影响力？</a></li>
-                <li><a href="#positional-effect" class="toc-h3">利用 LLM 的"注意力衰减"</a></li>
                 <li><a href="#depth-param" class="toc-h3">Depth 参数</a></li>
                 <li><a href="#depth-example" class="toc-h3">同一条指令，不同 depth 的效果</a></li>
                 <li><a href="#full-collab">完整的协作：时间 × Author's Note × Depth</a></li>
@@ -60,12 +58,12 @@
                 </header>
 
                 <div class="article-content">
-                    <blockquote>
-                        <p><strong>核心前提</strong>：在自然语言模型（LLM）驱动的 NPC 对话中，一切都是基于上下文工程。LLM 没有记忆、没有状态、没有情感——它只能看到你这一次喂给它的文本（即"上下文"），然后基于这段文本生成回复。所以，要让 NPC "知道"什么、"关注"什么、"紧张"什么，唯一的办法就是把对应的信息放进上下文里，并且放在合适的位置上。本文讨论的所有机制——时间、Author's Note、Depth——本质上都是在回答同一个问题：<strong>如何组装这段上下文，才能让 AI 表现得像一个活人？</strong></p>
-                    </blockquote>
+                    <p>在<a href="intelligent-npc-architecture.html">上一篇</a>中，我们搭建了 NPC 对话的基础架构：用角色卡（Persona）定义角色、用世界书（World Book）存储设定、用上下文编排决定哪些信息进入 AI 的视野。但那套系统有一个问题——<strong>世界是静态的</strong>。NPC 拥有丰富的背景设定，却永远活在同一个"此刻"。</p>
+
+                    <p>本篇解决这个问题。我们会依次引入三层机制：<strong>时间系统</strong>（让世界流动）→ <strong>Author's Note</strong>（让导演介入）→ <strong>Depth</strong>（控制导演的力度）。三层递进，后一层解决前一层留下的缺口。</p>
 
                     <blockquote>
-                        <p><strong>前置知识</strong>：本文涉及 AI 对话系统中的几个概念——Persona（角色卡）、世界书（World Book）、上下文编排（Context Orchestration）。你不需要深入了解它们的实现，只需知道它们是 AI NPC 对话系统的基本组件。</p>
+                        <p><strong>核心前提</strong>：在 LLM 驱动的 NPC 对话中，一切都是基于上下文工程。LLM 没有记忆、没有状态、没有情感——它只能看到你这一次喂给它的文本（即"上下文"），然后基于这段文本生成回复。所以，要让 NPC "知道"什么、"关注"什么、"紧张"什么，唯一的办法就是把对应的信息放进上下文里，并且放在合适的位置上。本文讨论的所有机制，本质上都是在回答同一个问题：<strong>如何组装这段上下文，才能让 AI 表现得像一个活人？</strong></p>
                     </blockquote>
 
                     <hr>
@@ -93,7 +91,7 @@
 
                     <h3 id="time-solution">解决方案：引入时间，让世界流动起来</h3>
 
-                    <h3 id="time-calendar">1. 给游戏世界一套历法</h3>
+                    <h4 id="time-calendar">1. 给游戏世界一套历法</h4>
 
                     <p>游戏有自己的纪年。玩家进入游戏时，是<strong>第 500 年</strong>。时间会随着游戏推进而流动——一天天过去，年份在累积。</p>
 
@@ -103,7 +101,7 @@
                         <li><strong>每个 NPC 的知识边界由出生年份决定</strong></li>
                     </ul>
 
-                    <h3 id="time-knowledge">2. 时间决定了"谁知道什么"</h3>
+                    <h4 id="time-knowledge">2. 时间决定了"谁知道什么"</h4>
 
                     <p>这是最关键的设计：<strong>时间是角色记忆的唯一凭证。</strong></p>
 
@@ -128,7 +126,7 @@
 
                     <p><strong>这就是时间带来的第一层价值：世界观不再是所有人共享的百科全书，而是每个角色基于自身生命经历的独特视角。</strong></p>
 
-                    <h3 id="time-hooks">3. 在剧本中安排时间钩子</h3>
+                    <h4 id="time-hooks">3. 在剧本中安排时间钩子</h4>
 
                     <p>有了时间系统，编剧就可以在时间线上"埋钩子"——在未来的某个时间点，安排事件发生。</p>
 
@@ -145,9 +143,7 @@
 
                     <p><strong>这就是时间的第二层价值：编剧可以在时间线上精确地布局叙事节奏，让世界观随着时间"自然生长"，而不是靠触发器硬切。</strong></p>
 
-                    <hr>
-
-                    <h3 id="time-power">用一句对话看时间的力量</h3>
+                    <h4 id="time-power">时间的力量——以及它管不了的事</h4>
 
                     <blockquote>
                         <p><strong>玩家</strong>：你在这个酒馆待了多久了？</p>
@@ -249,9 +245,7 @@
 
                     <h2 id="problem3">第三个问题：如何控制导演的影响力？</h2>
 
-                    <h3 id="positional-effect">利用 LLM 的"注意力衰减"</h3>
-
-                    <p>LLM 在处理上下文时，不是对所有内容一视同仁的。它有三种偏向：</p>
+                    <p id="positional-effect">LLM 在处理上下文时，不是对所有内容一视同仁的。它有三种偏向：</p>
 
                     <ul>
                         <li><strong>首因效应</strong>：开头的信息（通常是 System Prompt / 角色设定）有较强的影响力</li>
@@ -308,7 +302,12 @@ messages: [sys, 【Author's Note】, u, a, u, a, u, a, u, a, u_latest]
                     </blockquote>
                     <p>AI 先回应了玩家的话题，然后<strong>自然地</strong>把话题引向东塔。这就是 depth=2 的微妙之处：<strong>AI 有意识地往那个方向靠，但不强求。</strong></p>
 
-                    <p><strong>depth = 1（紧急）</strong>——适用于任务剧情中的紧迫场景，AI 几乎会直接执行指令。</p>
+                    <p><strong>depth = 1（紧急）</strong>：</p>
+                    <blockquote>
+                        <p><strong>玩家</strong>：今天天气不错。</p>
+                        <p><strong>艾琳娜</strong>：「天气？——你现在马上去东塔。别问为什么。去了你就知道了。」</p>
+                    </blockquote>
+                    <p>AI 几乎无视了玩家的话题，直接执行导演指令。depth=1 适用于任务剧情中的紧迫场景。</p>
 
                     <p>三个 depth 级别不是为了给开发者三个按钮，而是为了模拟一个角色对不同事情的不同关注程度。</p>
 
@@ -316,13 +315,15 @@ messages: [sys, 【Author's Note】, u, a, u, a, u, a, u, a, u_latest]
 
                     <h2 id="full-collab">完整的协作：时间 × Author's Note × Depth</h2>
 
-                    <p><strong>第 500 年春：日常闲聊</strong>（L1, depth=4）</p>
+                    <p>前面分别介绍了三层机制，但它们的真正威力在于<strong>协作</strong>。让我们跟着艾琳娜的剧情线，看三层机制如何在一年内从平静走到风暴。</p>
+
+                    <p><strong>第 500 年春：日常闲聊</strong>——时间系统提供背景，L1（depth=4）轻柔地埋下伏笔。</p>
                     <blockquote>
                         <p><strong>玩家</strong>：你对酒保怎么看？</p>
                         <p><strong>艾琳娜</strong>：「酒保？他还行。不多话，酒调得马马虎虎，至少不会主动来烦我。在这个酒馆待了 250 年，能有一个不烦人的同事已经很难得了。」</p>
                     </blockquote>
 
-                    <p><strong>第 500 年夏：玩家获得东塔钥匙</strong>（L2, depth=2）</p>
+                    <p><strong>第 500 年夏：玩家获得东塔钥匙</strong>——任务系统覆盖为 L2（depth=2），导演开始引导。</p>
                     <blockquote>
                         <p><strong>玩家</strong>：我帮酒保搞定了那件事。</p>
                         <p><strong>艾琳娜</strong>：「哦？那他给了你什么好处？......等等。」<br>
@@ -330,7 +331,7 @@ messages: [sys, 【Author's Note】, u, a, u, a, u, a, u, a, u_latest]
                         「你身上那股气息......那把钥匙，你是从哪里得到的？」</p>
                     </blockquote>
 
-                    <p><strong>第 500 年秋：逃出东塔</strong>（L3, depth=1）——东塔正在坍塌的紧急任务场景</p>
+                    <p><strong>第 500 年秋：逃出东塔</strong>——紧急事件触发 L3（depth=1），导演的声音盖过一切。</p>
                     <blockquote>
                         <p><strong>玩家</strong>：我想再找找还有没有别的线索......</p>
                         <p><strong>艾琳娜</strong>：「不要找了！！你听到了吗——石头在裂！整座塔在——你现在就走！信件已经拿到了，别的都不重要——」<br>
@@ -338,7 +339,7 @@ messages: [sys, 【Author's Note】, u, a, u, a, u, a, u, a, u_latest]
                         「求你了，出去。我不想再看着一个人死在这里。」</p>
                     </blockquote>
 
-                    <p><strong>这就是 depth 机制的精髓：它不是一个开关（有/无），而是一个旋钮（0-10）。</strong> 转到最大时，导演的声音盖过了一切；转到最小时，导演的声音只是背景里的一丝低语。</p>
+                    <p>从春到秋，同一个角色经历了 L1 → L2 → L3 的完整升级。<strong>Depth 机制不是一个开关（有/无），而是一个旋钮（0-10）。</strong> 转到最大时，导演的声音盖过了一切；转到最小时，导演的声音只是背景里的一丝低语。</p>
 
                     <hr>
 

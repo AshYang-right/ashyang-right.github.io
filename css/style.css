@@ -383,6 +383,11 @@ img {
     font-size: 0.8rem;
 }
 
+.toc-list .toc-h4 {
+    padding-left: 40px;
+    font-size: 0.75rem;
+}
+
 /* Article Content Area */
 .article-main {
     flex: 1;
