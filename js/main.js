@@ -1,5 +1,10 @@
 /**
  * 首页：标签筛选 + 文章列表渲染
+ *
+ * 标题的单一数据源是文章 HTML 中的 <h1>。
+ * 首页先用 posts.js 的 title 快速渲染（fallback），
+ * 然后异步 fetch 每篇文章的 HTML，提取真实 <h1> 覆盖显示。
+ * 这样即使 posts.js 的 title 忘了改，首页也会显示正确标题。
  */
 (function () {
     var listEl = document.getElementById("posts-list");
@@ -55,7 +60,7 @@
             }).join("");
 
             return (
-                '<article class="post-card" data-href="posts/' + post.slug + '.html">' +
+                '<article class="post-card" data-slug="' + post.slug + '" data-href="posts/' + post.slug + '.html">' +
                     '<h2 class="post-card-title"><a href="posts/' + post.slug + '.html">' + post.title + '</a></h2>' +
                     '<div class="post-card-meta">' + post.date + '</div>' +
                     '<p class="post-card-summary">' + post.summary + '</p>' +
@@ -76,4 +81,26 @@
 
     renderFilter();
     renderPosts();
+
+    // 异步校准标题：从文章 HTML 中提取真实 <h1> 覆盖首页显示
+    POSTS.forEach(function (post) {
+        fetch("posts/" + post.slug + ".html")
+            .then(function (res) { return res.text(); })
+            .then(function (html) {
+                var match = html.match(/<h1[^>]*class="article-title"[^>]*>(.*?)<\/h1>/);
+                if (!match) match = html.match(/<header[\s\S]*?<h1[^>]*>(.*?)<\/h1>/);
+                if (match && match[1]) {
+                    var realTitle = match[1].replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+                    if (realTitle !== post.title) {
+                        post.title = realTitle;
+                        var card = listEl.querySelector('[data-slug="' + post.slug + '"]');
+                        if (card) {
+                            var titleLink = card.querySelector(".post-card-title a");
+                            if (titleLink) titleLink.textContent = realTitle;
+                        }
+                    }
+                }
+            })
+            .catch(function () {});
+    });
 })();
