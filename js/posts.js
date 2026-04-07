@@ -26,7 +26,7 @@ const POSTS = [
     },
     {
         slug: "context-assembly-author-note",
-        title: "构建沉浸世界的智能 NPC（二）Context Assembly & Author's Note",
+        title: "构建沉浸世界的智能 NPC（二）：Context Assembly & Author's Note",
         date: "2026-03-27",
         summary: "如何让 NPC 引导玩家推进剧情？本文探讨时间系统、Author's Note 与 Depth 机制的协作——让世界从静止的蜡像馆变为正在运转的活世界。三层机制各司其职：时间回答'世界走到了哪里'，Author's Note 回答'NPC 现在该做什么'，Depth 回答'这件事有多急'。",
         tags: ["AI", "游戏开发", "NPC对话", "上下文工程", "智能NPC系列"]
