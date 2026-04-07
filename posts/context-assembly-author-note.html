@@ -124,7 +124,7 @@
                         <p><strong>酒保</strong>（只知道后果）：「我只知道那场战争让半个大陆变成了废墟。我出生的时候，战争已经结束二十年了，但北境的城镇还是一片残垣。」</p>
                     </blockquote>
 
-                    <p><strong>这就是时间带来的第一层价值：世界观不再是所有人共享的百科全书，而是每个角色基于自身生命经历的独特视角。</strong></p>
+                    <p><strong>世界观不再是所有人共享的百科全书，而是每个角色基于自身生命经历的独特视角。</strong></p>
 
                     <h4 id="time-hooks">3. 在剧本中安排时间钩子</h4>
 
@@ -141,7 +141,7 @@
 
                     <p><strong>钩子不是在游戏代码里硬编码的事件触发器。</strong> 它写在世界书里，带有时间约束。每条世界书条目有一个 <code>timeConstraint</code> 字段，标注生效的起止年份。上下文编排模块在组装 AI 输入时，会用当前的游戏年份做过滤——不在生效范围内的条目不会被注入上下文。</p>
 
-                    <p><strong>这就是时间的第二层价值：编剧可以在时间线上精确地布局叙事节奏，让世界观随着时间"自然生长"，而不是靠触发器硬切。</strong></p>
+                    <p><strong>编剧可以在时间线上精确地布局叙事节奏，让世界观随着时间"自然生长"，而不是靠触发器硬切。</strong></p>
 
                     <h4 id="time-power">时间的力量——以及它管不了的事</h4>
 
@@ -233,8 +233,9 @@
 第500年 夏 ── 玩家帮酒保完成任务，获得东塔钥匙
     │         → L2覆盖："注意到玩家拿到钥匙，引导去东塔"
     │
-第500年 秋 ── 玩家在东塔发现信件，揭示酒保身份
-    │         → L2覆盖："根据玩家的告知方式展现不同反应"
+第500年 秋 ── 东塔崩塌，玩家带出关键信件
+    │         → L3触发："催促玩家立刻撤离，一切以活命为先"
+    │         → 事件结束后回落 L2："根据玩家的告知方式展现不同反应"
     │
 第500年 冬 ── 事件余波
     │         → L2覆盖："你已经知道了真相，但还没决定怎么面对酒保"
@@ -317,7 +318,7 @@ messages: [sys, 【Author's Note】, u, a, u, a, u, a, u, a, u_latest]
 
                     <p>前面分别介绍了三层机制，但它们的真正威力在于<strong>协作</strong>。让我们跟着艾琳娜的剧情线，看三层机制如何在一年内从平静走到风暴。</p>
 
-                    <p><strong>第 500 年春：日常闲聊</strong>——时间系统提供背景，L1（depth=4）轻柔地埋下伏笔。</p>
+                    <p><strong>第 500 年春</strong>——L1（depth=4），日常闲聊。</p>
                     <blockquote>
                         <p><strong>玩家</strong>：你对酒保怎么看？</p>
                         <p><strong>艾琳娜</strong>：「酒保？他还行。不多话，酒调得马马虎虎，至少不会主动来烦我。在这个酒馆待了 250 年，能有一个不烦人的同事已经很难得了。」</p>
@@ -382,5 +383,6 @@ messages: [sys, 【Author's Note】, u, a, u, a, u, a, u, a, u_latest]
     </footer>
 
     <script src="../js/toc.js"></script>
+<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "2fcb844a810945bc8af964a4541996bf"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
