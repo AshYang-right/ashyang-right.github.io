@@ -37,3 +37,17 @@
     window.addEventListener("scroll", updateActive, { passive: true });
     updateActive();
 })();
+
+/**
+ * 文章正文内的链接 - 非锚点链接在新标签页打开
+ */
+(function () {
+    var links = document.querySelectorAll(".article-body a");
+    links.forEach(function (link) {
+        var href = link.getAttribute("href");
+        if (href && href.charAt(0) !== "#") {
+            link.setAttribute("target", "_blank");
+            link.setAttribute("rel", "noopener noreferrer");
+        }
+    });
+})();
