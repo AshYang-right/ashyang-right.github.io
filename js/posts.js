@@ -4,6 +4,13 @@
  */
 const POSTS = [
     {
+        slug: "ai-world-engine-architecture",
+        title: "构建 AI 世界的引擎",
+        date: "2026-04-07",
+        summary: "上一篇解决了「怎么读」——从世界书中精确读取当前需要的信息。但世界书是静态的。这一篇解决「怎么写」——三个隐性的自动化工作流在每次对话后默默运行，把角色成长、主观记忆和客观事件写回世界书。以艾琳娜找到密信为例，完整演示从读到写的闭环。",
+        tags: ["AI", "系统架构", "上下文工程", "世界引擎"]
+    },
+    {
         slug: "character-palette-prompt-engineering",
         title: "用文字创造角色：AI 角色设计的提示词工程",
         date: "2026-04-02",
