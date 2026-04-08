@@ -743,6 +743,36 @@ img {
     color: var(--color-accent);
 }
 
+/* ===== Mermaid Diagram ===== */
+.mermaid-wrapper {
+    margin: 28px 0;
+    padding: 24px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+}
+
+.mermaid-wrapper .mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* 让 Mermaid SVG 自适应容器 */
+.mermaid-wrapper .mermaid svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Mermaid 图下方的可选说明文字 */
+.mermaid-caption {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    margin-top: 12px;
+    font-style: italic;
+}
+
 /* ===== Scrollbar ===== */
 .article-toc::-webkit-scrollbar {
     width: 3px;

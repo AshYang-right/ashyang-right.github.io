@@ -8,6 +8,38 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,600&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'base',
+                themeVariables: {
+                    background: '#f3ede4',
+                    primaryColor: '#eae3d8',
+                    primaryBorderColor: '#ddd6cb',
+                    primaryTextColor: '#3d3929',
+                    secondaryColor: '#eae3d8',
+                    secondaryBorderColor: '#ddd6cb',
+                    secondaryTextColor: '#3d3929',
+                    tertiaryColor: '#eae3d8',
+                    tertiaryBorderColor: '#ddd6cb',
+                    tertiaryTextColor: '#3d3929',
+                    lineColor: '#b0a99e',
+                    textColor: '#3d3929',
+                    fontSize: '14px',
+                    fontFamily: '"Source Serif 4", "DFSong Std", serif'
+                },
+                flowchart: {
+                    htmlLabels: true,
+                    curve: 'basis',
+                    padding: 16,
+                    nodeSpacing: 40,
+                    rankSpacing: 50
+                }
+            });
+        });
+    </script>
 </head>
 <body>
     <header class="site-header">
@@ -33,15 +65,14 @@
                 <li><a href="#flow1" class="toc-h3">工作流一：角色档案更新</a></li>
                 <li><a href="#flow2" class="toc-h3">工作流二：角色记忆更新</a></li>
                 <li><a href="#flow3" class="toc-h3">工作流三：时间线记录</a></li>
-                <li><a href="#three-as-one" class="toc-h3">三个工作流如何协同</a></li>
+                <li><a href="#three-as-one">设计决策：为什么这样拆</a></li>
+                <li><a href="#how-they-work-together" class="toc-h3">三个工作流如何协同</a></li>
                 <li><a href="#why-parallel" class="toc-h3">为什么要并行而不是串行</a></li>
                 <li><a href="#shared-base" class="toc-h3">共享底座与差异化启用</a></li>
                 <li><a href="#controller">配套一：动态内容控制器——精确地「读」</a></li>
                 <li><a href="#ctrl-detect" class="toc-h3">角色检测：谁在场就加载谁</a></li>
                 <li><a href="#ctrl-event" class="toc-h3">事件互斥：一次只做一件事</a></li>
-                <li><a href="#ctrl-region" class="toc-h3">区域感知：你在哪就加载哪</a></li>
-                <li><a href="#ctrl-storyline" class="toc-h3">暗线系统：四层防护让剧情自然浮现</a></li>
-                <li><a href="#data-validation">配套二：数据校验与信息隔离</a></li>
+                <li><a href="#ctrl-region" class="toc-h3">区域感知：根据位置加载</a></li>
                 <li><a href="#lifecycle">一次完整对话的生命周期</a></li>
                 <li><a href="#summary">总结</a></li>
             </ul>
@@ -64,7 +95,7 @@
 
                     <h2 id="recap">回顾：上一篇解决了「读」</h2>
 
-                    <p>在 <a href="./intelligent-npc-architecture.html">《构建沉浸世界的智能 NPC》</a> 中，我们从零搭建了一套 AI NPC 对话系统。那篇文章解决了一个核心问题：<strong>怎么从一堆世界设定中，挑出当前对话最需要的信息，喂给 AI。</strong></p>
+                    <p>在 <a href="./intelligent-npc-architecture.html">《构建沉浸世界的智能 NPC：Context is All You Need》</a> 中，我们从零搭建了一套 AI NPC 对话系统。那篇文章解决了一个核心问题：<strong>怎么从一堆世界设定中，挑出当前对话最需要的信息，喂给 AI。</strong></p>
 
                     <p>世界书提供知识、角色卡提供性格、记忆系统维持连贯性、动态权重确保回答聚焦——最终结论是：AI 对话系统的核心工作 = <strong>为每次对话组装最合适的上下文</strong>。</p>
 
@@ -115,6 +146,18 @@
 
                     <p>这三个工作流是完全隐性的——用户看到的只是 AI 的故事回复，不知道后台在同时执行三个写入任务。它们的输出不会出现在用户的界面上，而是被静默地写回世界书。</p>
 
+                    <div class="mermaid-wrapper">
+                        <div class="mermaid">
+graph LR
+    dialogue["一轮对话结束"] --> flow1["工作流一\n角色档案更新"] & flow2["工作流二\n角色记忆更新"] & flow3["工作流三\n时间线记录"]
+    flow1 --> worldbook["世界书更新完成"]
+    flow2 --> worldbook
+    flow3 --> worldbook
+    worldbook --> next["下一轮对话\n读取最新世界书"]
+                        </div>
+                        <div class="mermaid-caption">三个工作流从同一轮对话出发，并行写入世界书的不同区域</div>
+                    </div>
+
                     <p>接下来用艾琳娜的例子，逐一看看每个工作流在"找到密信"这轮对话后会做什么。</p>
 
                     <h3 id="flow1">工作流一：角色档案更新——「变成了什么人」</h3>
@@ -123,13 +166,19 @@
 
                     <p>每个角色的档案包含基础信息、性格描述、不同场景下的行为模式等（这个结构在 <a href="./character-palette-prompt-engineering.html">《用文字创造角色》</a> 中有详细解释）。工作流一会按以下步骤分析这轮对话：</p>
 
-                    <ol>
-                        <li><strong>扫描</strong>：这轮对话中出现了谁？——艾琳娜和艾德里安</li>
-                        <li><strong>匹配</strong>：艾琳娜已有档案。她现有的性格底色是"执念"——300 年来一直在寻找证明清白的证据</li>
-                        <li><strong>判断</strong>：这轮对话中，信件被找到了。艾琳娜的执念有了着落——这是一个<strong>根本性的变化</strong>。需要更新她的性格描述</li>
-                        <li><strong>自检</strong>：新写的内容是否足够具体？不能写"她变得释然了"（太抽象），要写具体的行为变化</li>
-                        <li><strong>写回</strong>：输出更新后的艾琳娜档案，写入世界书</li>
-                    </ol>
+                    <div class="mermaid-wrapper">
+                        <div class="mermaid">
+graph LR
+    scan["扫描\n这轮对话出现了谁"]
+    match["匹配\n读取现有角色档案"]
+    judge["判断\n角色发生根本性变化"]
+    check["自检\n新内容是否足够具体"]
+    write["写回\n更新档案写入世界书"]
+    scan --> match --> judge --> check --> write
+                        </div>
+                    </div>
+
+                    <p>以"找到密信"为例：扫描检测到艾琳娜和艾德里安在场；匹配到艾琳娜现有的性格底色是"执念"；判断出信件被找到意味着执念有了着落——<strong>这是一个根本性的变化</strong>；自检确认新描述足够具体（不是"她变得释然了"，而是具体的行为变化）；最终写回更新后的档案：</p>
 
 <pre><code>更新前的艾琳娜档案（性格片段）：
   底色：执念——300 年来唯一的驱动力就是证明清白
@@ -150,13 +199,19 @@
 
                     <p>记忆和档案的本质区别在于视角。档案是第三方观察者写的「这个人是什么样的」，记忆是角色自己写的「我觉得发生了什么」。工作流二会这样处理"找到密信"：</p>
 
-                    <ol>
-                        <li><strong>读取人设</strong>：艾琳娜的性格底色是"执念"，她关注的核心是"清白"和"信任"</li>
-                        <li><strong>视角过滤</strong>：艾琳娜在场，而且这件事对她极其重要——继续</li>
-                        <li><strong>主观记录</strong>：用艾琳娜的语气写下记忆</li>
-                        <li><strong>衰退处理</strong>：这是一条核心记忆，永远不会被压缩或遗忘</li>
-                        <li><strong>写回</strong>：更新后的记忆写入世界书</li>
-                    </ol>
+                    <div class="mermaid-wrapper">
+                        <div class="mermaid">
+graph LR
+    persona["读取人设\n角色关注什么"]
+    filter["视角过滤\n对这个角色重要吗"]
+    record["主观记录\n用角色语气写下记忆"]
+    decay["衰退处理\n近期/沉淀/核心分级"]
+    writeback["写回\n更新记忆写入世界书"]
+    persona --> filter --> record --> decay --> writeback
+                        </div>
+                    </div>
+
+                    <p>艾琳娜的性格底色是"执念"，她关注"清白"和"信任"——所以找到密信这件事对她极其重要。工作流二用她的语气写下记忆：</p>
 
 <pre><code>艾琳娜的记忆写入：
   [核心记忆] "艾德里安把信件放在我手里的时候，他的手在抖。
@@ -177,6 +232,17 @@
                     <p>工作流三的任务是：<strong>客观记录世界中发生了什么，写回世界书。</strong></p>
 
                     <p>时间线是整个系统的「骨架」。角色记忆是主观的、有偏差的、会被篡改的。角色档案是不断演化的。但世界需要一条客观的事实线来锚定一切——什么真的发生了，什么先什么后，什么导致了什么。没有这条线，剧情会自相矛盾。</p>
+
+                    <div class="mermaid-wrapper">
+                        <div class="mermaid">
+graph LR
+    grade["事件定级\nA转折 B推进 C填充"]
+    clue["追踪线索\n哪些线索被解决"]
+    situation["更新态势\n记录事实和影响"]
+    compress["压缩\nB级远期压缩 C级不记录"]
+    grade --> clue --> situation --> compress
+                        </div>
+                    </div>
 
                     <p>工作流三会先给这轮事件定级：</p>
 
@@ -204,7 +270,11 @@
 
                     <p>时间线是三个工作流中唯一没有「性格」的——它不关心谁怎么想，只关心到底发生了什么。正因为它的客观性，才能成为校准另外两个主观系统的锚点。</p>
 
-                    <h3 id="three-as-one">三个工作流如何协同</h3>
+                    <h2 id="three-as-one">设计决策：为什么这样拆</h2>
+
+                    <p>三个工作流的拆分不是随意的。这一节解释它们如何协同、为什么并行、以及底层的共享结构。</p>
+
+                    <h3 id="how-they-work-together">三个工作流如何协同</h3>
 
                     <p>三个工作流各自独立写入世界书的不同区域，但它们的输出在下一轮对话中会被一起加载，形成一个完整的世界状态：</p>
 
@@ -234,9 +304,7 @@ AI 的上下文中包含：
 
                     <p><strong>灵活性</strong>：三个工作流可以使用不同的生成参数。比如时间线需要客观精确，可以降低创造性；角色记忆需要主观色彩，可以提高创造性。</p>
 
-                    <p>源码中还有一个有趣的设计：存在一个「全合一」模式，理论上可以在单个工作流中同时执行角色更新 + 记忆 + 时间线。但作者选择了拆分为三个独立工作流。这个选择体现了一个工程判断——<strong>单个 AI 请求同时处理三种不同视角的任务，质量会下降；拆开后每个工作流可以专注于一个视角，输出质量更高。</strong></p>
-
-                    <p>有趣的是，这种「主进程 + 异步子进程」的模式不只出现在 AI 世界引擎中。<a href="./claude-code-context-compression.html">Claude Code 的源码</a>里也有类似的设计——主对话进程之外，会启动独立的子进程来处理上下文压缩、代码索引更新等任务，和主进程并行运行、不阻塞用户交互、完成后将结果写回共享状态。核心思想是同一个：<strong>把「与用户交互」和「维护后台状态」解耦成独立的进程。</strong> 只要系统复杂到需要同时做多件事，这几乎是必然的架构选择。</p>
+                    <p>源码中还有一个有趣的设计：存在一个「全合一」模式，理论上可以在单个工作流中同时执行角色更新 + 记忆 + 时间线。但作者选择了拆分为三个独立工作流。这个选择体现了一个工程判断——<strong>单个 AI 请求同时处理三种不同视角的任务，质量会下降；拆开后每个工作流可以专注于一个视角，输出质量更高。</strong> 这种「主进程 + 异步子进程」的解耦模式在复杂系统中很常见——<a href="./claude-code-context-compression.html">Claude Code 的源码</a>中也有类似设计，主对话进程之外启动独立子进程处理上下文压缩和索引更新。</p>
 
                     <h3 id="shared-base">共享底座与差异化启用</h3>
 
@@ -255,15 +323,9 @@ AI 的上下文中包含：
 
                     <hr>
 
-                    <h2 id="controller">配套一：动态内容控制器——精确地「读」</h2>
+                    <h2 id="controller">动态内容控制器——精确地「读」</h2>
 
-                    <p>三个工作流解决了「写」的问题。但「写」和「读」必须配合——写回世界书的内容，需要在下一轮对话时被精确地读取出来。</p>
-
-                    <p>一个持续运行的世界可能有数百条设定内容——角色档案、势力设定、区域地图、事件规则、暗线剧情。如果把它们全部塞进 AI 的上下文，会出现两个问题：token 不够用（即使是百万级窗口，信息过多也会导致注意力稀释），以及 AI 会被无关信息干扰。</p>
-
-                    <p>在 <a href="./intelligent-npc-architecture.html">智能 NPC 系统</a>中，我们的方案是给每条信息打分、按分数排序、在预算内截断——简单有效，但只适合信息量不大的场景。当设定膨胀到数百条时，排序裁剪不够用了——你需要的不是「按分数排到前 N 名」，而是<strong>按条件精确决定「该加载哪些、不该加载哪些」</strong>。</p>
-
-                    <p>动态内容控制器就是这个方案。它是一个约 500 行的模板引擎，在<strong>每次对话发生前</strong>执行，根据当前场景的变量和最近对话的关键词，通过条件门控精确决定哪些设定要加载到 AI 的上下文中。</p>
+                    <p>三个工作流解决了「写」，但写回的内容需要在下一轮对话时被精确地读取出来。一个持续运行的世界可能有数百条设定，全塞进上下文既浪费 token 又会干扰 AI。<a href="./intelligent-npc-architecture.html">上一篇</a>的方案是按分数排序截断，但设定膨胀到数百条时不够用了——你需要的是<strong>按条件精确决定「该加载哪些、不该加载哪些」</strong>。动态内容控制器就是这个方案：一个约 500 行的模板引擎，在每次对话前根据场景变量和对话关键词，通过条件门控决定加载哪些设定。</p>
 
                     <h3 id="ctrl-detect">角色检测：谁在场就加载谁</h3>
 
@@ -283,7 +345,7 @@ AI 的上下文中包含：
 
                     <p>世界中有多种事件类型（副本探索、Boss 战、交易会等），每种事件都有一套详细的规则指南。控制器的设计是<strong>互斥加载</strong>——一次只加载一种事件的指南。当艾德里安在东塔探索时，AI 只看到东塔相关的规则，不会被交易会的规则干扰。</p>
 
-                    <h3 id="ctrl-region">区域感知：你在哪就加载哪</h3>
+                    <h3 id="ctrl-region">区域感知：根据位置加载</h3>
 
                     <p>控制器按三个层级做条件加载：</p>
 
@@ -306,45 +368,7 @@ AI 的上下文中包含：
   ✅ 艾琳娜档案 + 艾琳娜记忆（被角色检测命中）
   ❌ 王都地图、酒馆设定、酒馆老板档案（不在场，不加载）</code></pre>
 
-                    <h3 id="ctrl-storyline">暗线系统：四层防护让剧情自然浮现</h3>
-
-                    <p>这是条件加载的一个极端案例——它不仅要控制<strong>加载什么</strong>，还要控制<strong>什么时候才允许加载</strong>。</p>
-
-                    <p>假设世界中有一条贯穿全局的暗线剧情，设计目标是让玩家在探索过程中自然地、碎片式地发现真相。为了实现「让玩家自己发现」而不是「系统主动告知」，暗线系统设计了四层防护：</p>
-
-                    <p><strong>第一层：默认离线。</strong> 所有暗线设定在初始状态下都是关闭的。唯一能加载它们的方式是控制器通过代码显式调用。</p>
-
-                    <p><strong>第二层：与事件互斥。</strong> 如果玩家正在进行任何事件（探索东塔、交易等），暗线检测完全跳过——AI 物理上看不到任何暗线内容。</p>
-
-                    <p><strong>第三层：碎片化条件加载。</strong> 即使暗线被触发，也不是全部灌进去。控制器精确到只加载当前场景相关的碎片——你在古堡能听到古堡的碎片，但听不到王都的碎片。你必须<strong>物理上到达那个地方</strong>才能听到那里的故事。</p>
-
-                    <p><strong>第四层：行为约束。</strong> 即使碎片加载了，总规则明确约束 AI——不得主动揭示关键信息，每个角色只知道自己的碎片，碎片必须在角色「有理由提起」时自然出现。</p>
-
-                    <div class="story-line">
-                        <p>实际效果：艾德里安和酒馆老板聊天时，老板可能会随口说一句"古堡东边的树林里有块老石碑，上面刻的字没人看得懂"——这是一个自然的引导，但玩家完全可以无视它。如果玩家去了那块石碑，才会发现另一个碎片。整个暗线的发现过程完全由玩家的探索行为驱动。</p>
-                    </div>
-
-                    <hr>
-
-                    <h2 id="data-validation">配套二：数据校验与信息隔离</h2>
-
-                    <p>三个后台工作流在不断往世界书里写入新内容。但 AI 是概率性的——如果它输出"好感度: 99999"或者漏掉了某个必要字段，世界状态就会崩溃。</p>
-
-                    <p>数据校验层用一套严格的类型约束规则来校验 AI 的每一次写入：</p>
-
-                    <p><strong>类型转换</strong>：AI 输出 <code>"100"</code>（字符串），自动转换为 <code>100</code>（数字）。</p>
-
-                    <p><strong>边界钳制</strong>：好感度被硬性约束在 [-1000, 1000]。AI 输出 <code>5000</code>，自动钳制为 <code>1000</code>。</p>
-
-                    <p><strong>默认值填充</strong>：任何字段缺失时自动填充默认值。AI 漏写了某个字段，不会导致整个数据结构崩溃。</p>
-
-                    <p><strong>自动清理</strong>：数量归零的物品自动从背包中移除。</p>
-
-                    <p>它本质上是给「写」操作套了一层<strong>类型系统</strong>——AI 可以自由地写内容，但数据结构和数值范围被死死锁住。</p>
-
-                    <p>除了校验写入的数据，引擎还做了另一件事：<strong>让 AI 和用户看到不同版本的信息。</strong></p>
-
-                    <p>以状态面板为例。同一个标签，在发给 AI 的提示词中被替换为空（AI 看不到），在渲染给用户的页面中被替换为完整的状态面板 UI（用户看得到）。结果：<strong>用户看到状态面板，AI 看不到。</strong> AI 不会在回复中说"你的好感度是 500"——因为它根本不知道有状态面板存在。这避免了 AI 把数值信息硬编码进故事叙述中，保持了沉浸感。</p>
+                    <p>控制器还支持更精细的条件门控。比如暗线剧情的碎片化加载——所有暗线设定默认关闭，只有在玩家不处于任何事件、且物理上到达了相关场景、且角色有理由提起时，碎片才会自然出现在对话中。四层条件层层过滤，确保玩家只能通过自主探索发现线索，而不是被系统主动告知。</p>
 
                     <hr>
 
@@ -352,38 +376,20 @@ AI 的上下文中包含：
 
                     <p>把上面所有模块串起来——读、生成、写回、再读——以"艾德里安找到密信"为例，一次完整对话的生命周期：</p>
 
-<pre><code>艾德里安输入 "我把密信交给艾琳娜"
-  │
-  ▼ ① 读（动态内容控制器）
-  │
-  ├─ 读变量：区域=古堡, 场景=地下室
-  ├─ 角色检测：检测到「艾琳娜」
-  ├─ 加载：古堡设定 + 艾琳娜档案 + 艾琳娜记忆 + 时间线
-  └─ 信息隔离：对 AI 隐藏状态面板
-  │
-  ▼ ② 生成（AI 回复）
-  │
-  艾德里安看到：艾琳娜接过信件，双手颤抖，
-  低声说"300年了......终于......"
-  │
-  ▼ ③ 写回（三个后台工作流并行执行）
-  │
-  ├─ 工作流一：艾琳娜的性格底色从"执念"更新为"释然与迷茫"
-  ├─ 工作流二：写入核心记忆 "他真的做到了"
-  └─ 工作流三：写入 A 级事件 "密信被找到，冤案证据链完成"
-  │
-  ▼ ④ 校验
-  │
-  ├─ 好感度变动经边界钳制
-  ├─ 活跃线索更新（"清白"→已解决，新增"去留"）
-  └─ 写入持久化存储
-  │
-  ▼ ⑤ 渲染
-  │
-  └─ 状态面板更新（用户可见，AI 不可见）
+                    <div class="mermaid-wrapper">
+                        <div class="mermaid">
+graph LR
+    input["用户输入"] --> read["读\n控制器加载世界书"]
+    read --> generate["生成\nAI 回复"]
+    generate --> writeback["写回\n三个工作流并行"]
+    writeback --> validate["校验\n边界钳制 + 持久化"]
+    validate --> render["渲染\n状态面板更新"]
+    render -.->|"下一轮带着更新后的世界书"| input
+                        </div>
+                        <div class="mermaid-caption">一次完整对话的闭环：读 → 生成 → 写回 → 校验 → 渲染 → 下一轮</div>
+                    </div>
 
-  ↓ 下一次对话时，回到 ① → 读取 ③④ 写入的最新内容
-  → AI 看到的艾琳娜已经是一个"释然但迷茫"的人了</code></pre>
+                    <p>以"艾德里安把密信交给艾琳娜"为例：控制器检测到艾琳娜在场，加载古堡设定、艾琳娜档案、记忆和时间线，同时对 AI 隐藏状态面板。AI 生成回复——艾琳娜接过信件，双手颤抖。随后三个工作流并行启动：档案从"执念"更新为"释然与迷茫"，写入核心记忆"他真的做到了"，时间线记录 A 级事件"冤案证据链完成"。工作流的输出经过数据校验层（类型约束、边界钳制、默认值填充）写入持久化存储，状态面板对用户更新但对 AI 不可见——AI 不会在回复中说"好感度是 500"，沉浸感得以保持。下一次对话时，AI 上下文中的艾琳娜已是一个完全不同的角色。</p>
 
                     <p>这就是完整的闭环：<strong>读 → 生成 → 写回 → 再读。</strong> 世界就这样一轮一轮地转了下去。</p>
 
