@@ -116,117 +116,97 @@
 
                     <p>解决方案是：在 AI 和用户之间，安排一组<strong>隐性的自动化工作流</strong>。用户看不到它们，但它们在每次对话后默默运行——分析这轮对话产生了什么变化，然后把变化写回世界书。下一次对话时，这些更新过的世界书又会被加载到 AI 的上下文中。</p>
 
-                    <p>这就是本文要拆解的引擎。核心是三个并行运行的后台工作流，配合一个动态内容控制器和一层数据校验，形成一个「读 → 生成 → 写回 → 再读」的持续闭环。</p>
+                    <p>这就是本文要拆解的引擎。核心是三个并行运行的自动化工作流，配合一个动态内容控制器和一层数据校验，形成一个「读 → 生成 → 写回 → 再读」的持续闭环。</p>
 
                     <hr>
 
                     <h2 id="hidden-scripts">核心方案：三个隐性的自动化工作流</h2>
 
-                    <p>每次用户和 AI 完成一轮对话后，引擎会在后台同时启动三个独立的 AI 请求。它们各自负责一个维度的「写入」：</p>
+                    <p>每次用户和 AI 完成一轮对话后，引擎不会做一次“统一写回”，而是会在后台启动三个独立的 AI 请求，分别处理三种不同性质的变化。</p>
+
+                    <p>真正关键的问题不是“它们分别写什么”，而是：<strong>为什么不能只用一个工作流把这件事全做了？</strong>因为一轮对话结束后，系统其实要同时回答三个完全不同的问题——这个角色因此变成了什么人、这个角色主观记住了什么、世界客观发生了什么。它们的视角、写法和保留策略都不同；如果硬塞进一个工作流里，主观情绪会污染客观记录，世界事件又会挤压角色变化，最后什么都写了，但什么都不够准。</p>
+
+                    <div class="story-line">
+                        <p>所以拆分不是为了复杂，而是为了把三种认知任务分开处理。先拆清职责，再看这三条工作流各自负责什么：</p>
+                    </div>
 
                     <table>
                         <thead><tr><th>工作流</th><th>写入什么</th><th>视角</th><th>核心问题</th></tr></thead>
                         <tbody>
-                            <tr><td><strong>工作流一：角色更新</strong></td><td>角色档案（性格、状态、外貌）</td><td>第三方观察者</td><td>这个角色<strong>变成了什么人</strong>？</td></tr>
-                            <tr><td><strong>工作流二：角色记忆</strong></td><td>角色的主观记忆</td><td>角色自己</td><td>这个角色<strong>记住了什么</strong>？</td></tr>
-                            <tr><td><strong>工作流三：时间线</strong></td><td>世界的客观事件记录</td><td>上帝视角</td><td>世界<strong>发生了什么</strong>？</td></tr>
+                            <tr><td><strong>工作流一：角色档案更新</strong></td><td>角色档案（性格、状态、外貌）</td><td>第三方观察者</td><td>这个角色<strong>变成了什么人</strong>？</td></tr>
+                            <tr><td><strong>工作流二：角色记忆更新</strong></td><td>角色的主观记忆</td><td>角色自己</td><td>这个角色<strong>记住了什么</strong>？</td></tr>
+                            <tr><td><strong>工作流三：时间线记录</strong></td><td>世界的客观事件记录</td><td>上帝视角</td><td>世界<strong>发生了什么</strong>？</td></tr>
                         </tbody>
                     </table>
 
-                    <p>这三个工作流是完全隐性的——用户看到的只是 AI 的故事回复，不知道后台在同时执行三个写入任务。它们的输出不会出现在用户的界面上，而是被静默地写回世界书。</p>
+                    <p>这三个工作流对用户是完全隐性的——用户看到的只有故事回复，看不到后台的写回过程。但下一轮对话开始时，它们写入的结果会一起影响 AI 读到的世界状态。</p>
+
+                    <p>同一件事之所以要拆成三条线，不是因为系统想存三份重复数据，而是因为它要把同一个事件的三个侧面分别写清。还是以“艾德里安找到密信”为例：</p>
+
+                    <table>
+                        <thead><tr><th>工作流</th><th>它不负责什么</th><th>它真正写回什么</th></tr></thead>
+                        <tbody>
+                            <tr><td><strong>角色档案更新</strong></td><td>不负责复述事件全貌</td><td>艾琳娜从“执念驱动”变成“释然与迷茫”</td></tr>
+                            <tr><td><strong>角色记忆更新</strong></td><td>不负责记录世界的完整事实</td><td>“终于有人相信我了”这种主观记忆</td></tr>
+                            <tr><td><strong>时间线记录</strong></td><td>不负责保存角色的内心波动</td><td>“冤案证据被找到”这一条客观事件与线索状态</td></tr>
+                        </tbody>
+                    </table>
+
+                    <p>换句话说，三个工作流不是在重复记录同一件事，而是在回答三个不同问题：<strong>因此变成了什么人、主观记住了什么、世界客观发生了什么。</strong></p>
+
+                    <p>职责拆开之后，剩下要解释的才是运行机制。三个工作流共享同一套执行链路，差异只发生在第二步携带的「专属指南」和分析视角上：</p>
 
                     <figure class="svg-figure">
-                        <svg width="100%" viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg">
+                        <svg width="100%" viewBox="0 0 680 340" xmlns="http://www.w3.org/2000/svg">
                             <defs>
-                                <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <marker id="arr-pipe" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                                     <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                 </marker>
                             </defs>
 
-                            <!-- 起点 -->
-                            <rect x="40" y="94" width="120" height="44" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-                            <text x="100" y="116" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#444441">一轮对话结束</text>
+                            <!-- Step 1: 对话上下文 -->
+                            <rect x="220" y="20" width="240" height="40" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+                            <text x="340" y="40" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#444441">一轮对话的完整上下文</text>
 
-                            <!-- 起点 → 分叉点 -->
-                            <line x1="160" y1="116" x2="190" y2="116" stroke="#888780" stroke-width="1.5"/>
-                            <circle cx="190" cy="116" r="3" fill="#888780"/>
+                            <line x1="340" y1="60" x2="340" y2="80" stroke="#888780" stroke-width="1.5" marker-end="url(#arr-pipe)"/>
 
-                            <!-- 并行容器：顶部留 24px 给标签 -->
-                            <rect x="220" y="20" width="240" height="196" rx="12" fill="none" stroke="#D3D1C7" stroke-width="1" stroke-dasharray="5 3"/>
-                            <text x="340" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="500" fill="#888780">并行执行</text>
+                            <!-- Step 2: 组装 Prompt -->
+                            <rect x="140" y="80" width="400" height="64" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+                            <text x="340" y="100" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#444441">组装 Prompt</text>
+                            <text x="340" y="120" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#5F5E5A">共享提示词节点 + 专属指南 + 专属思维链</text>
 
-                            <!-- 分叉线 -->
-                            <path d="M 190 116 L 190 66 L 228 66" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
-                            <line x1="190" y1="116" x2="228" y2="116" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
-                            <path d="M 190 116 L 190 170 L 228 170" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+                            <!-- 三色标注：专属指南的差异 -->
+                            <rect x="148" y="148" width="124" height="22" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+                            <text x="210" y="159" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="10" font-weight="400" fill="#3C3489">一：角色档案指南</text>
+                            <rect x="278" y="148" width="124" height="22" rx="4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+                            <text x="340" y="159" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="10" font-weight="400" fill="#085041">二：角色记忆指南</text>
+                            <rect x="408" y="148" width="124" height="22" rx="4" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+                            <text x="470" y="159" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="10" font-weight="400" fill="#0C447C">三：时间线指南</text>
 
-                            <!-- 工作流一 -->
-                            <rect x="228" y="50" width="224" height="34" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
-                            <text x="340" y="67" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#3C3489">工作流一：角色档案更新</text>
+                            <line x1="340" y1="170" x2="340" y2="190" stroke="#888780" stroke-width="1.5" marker-end="url(#arr-pipe)"/>
 
-                            <!-- 工作流二 -->
-                            <rect x="228" y="100" width="224" height="34" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-                            <text x="340" y="117" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#085041">工作流二：角色记忆更新</text>
+                            <!-- Step 3: 发给 AI -->
+                            <rect x="200" y="190" width="280" height="40" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+                            <text x="340" y="210" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#633806">发给独立的 AI 请求 → 返回 JSON</text>
 
-                            <!-- 工作流三 -->
-                            <rect x="228" y="152" width="224" height="34" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
-                            <text x="340" y="169" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#0C447C">工作流三：时间线记录</text>
+                            <line x1="340" y1="230" x2="340" y2="250" stroke="#888780" stroke-width="1.5" marker-end="url(#arr-pipe)"/>
 
-                            <!-- 汇合线 -->
-                            <path d="M 452 66 L 480 66 L 480 116" fill="none" stroke="#888780" stroke-width="1.5"/>
-                            <line x1="452" y1="116" x2="480" y2="116" stroke="#888780" stroke-width="1.5"/>
-                            <path d="M 452 170 L 480 170 L 480 116" fill="none" stroke="#888780" stroke-width="1.5"/>
-                            <circle cx="480" cy="116" r="3" fill="#888780"/>
+                            <!-- Step 4: 解析写入 -->
+                            <rect x="180" y="250" width="320" height="40" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+                            <text x="340" y="270" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#085041">EW 解析 JSON → 写入世界书条目</text>
 
-                            <!-- 汇合 → 世界书 -->
-                            <line x1="480" y1="116" x2="520" y2="116" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
-
-                            <!-- 终点 -->
-                            <rect x="520" y="90" width="120" height="52" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
-                            <text x="580" y="110" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#633806">世界书</text>
-                            <text x="580" y="128" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#854F0B">更新完成</text>
-
-                            <!-- 闭环：文字在虚线上方 -->
-                            <text x="340" y="230" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="12" font-weight="500" fill="#c4703f">下一轮对话，读取最新世界书</text>
-                            <path d="M 580 142 L 580 246 L 100 246 L 100 138" fill="none" stroke="#c4703f" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+                            <text x="340" y="310" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#888780">三个工作流各自走一遍这条链路，差异只在第二步的「专属指南」</text>
                         </svg>
-                        <figcaption>三个工作流从同一轮对话出发，并行写入世界书的不同区域，形成持续闭环</figcaption>
+                        <figcaption>每个工作流的通用执行链路：对话上下文 → 组装 Prompt → AI 处理 → 解析写回世界书</figcaption>
                     </figure>
 
-                    <p>接下来用艾琳娜的例子，逐一看看每个工作流在"找到密信"这轮对话后会做什么。</p>
+                    <p>接下来还是用“找到密信”这个事件，分别看三条工作流到底会把什么写回世界书。</p>
 
                     <h3 id="flow1">工作流一：角色档案更新——「变成了什么人」</h3>
 
-                    <p>工作流一的任务是：<strong>根据最新的对话内容，判断哪些角色的档案需要更新，然后把更新后的档案写回世界书。</strong></p>
+                    <p>工作流一关心的不是“事件有没有发生”，而是：<strong>这件事有没有让角色发生根本性变化。</strong>只有当角色真的被这轮剧情改变时，系统才会把更新后的档案写回世界书——日常闲聊不触发，零写入。</p>
 
-                    <p>每个角色的档案包含基础信息、性格描述、不同场景下的行为模式等（这个结构在 <a href="./character-palette-prompt-engineering.html">《用文字创造角色》</a> 中有详细解释）。工作流一会按以下步骤分析这轮对话：</p>
-
-                    <figure class="svg-figure">
-                        <svg width="100%" viewBox="0 0 680 90" xmlns="http://www.w3.org/2000/svg">
-                            <defs><marker id="arr1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
-                            <rect x="40" y="20" width="88" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
-                            <text x="84" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#3C3489">扫描</text>
-                            <text x="84" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#534AB7">谁在场</text>
-                            <line x1="128" y1="45" x2="156" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr1)"/>
-                            <rect x="156" y="20" width="88" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
-                            <text x="200" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#3C3489">匹配</text>
-                            <text x="200" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#534AB7">读取档案</text>
-                            <line x1="244" y1="45" x2="272" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr1)"/>
-                            <rect x="272" y="20" width="112" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
-                            <text x="328" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#3C3489">判断</text>
-                            <text x="328" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#534AB7">根本性变化？</text>
-                            <line x1="384" y1="45" x2="412" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr1)"/>
-                            <rect x="412" y="20" width="112" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
-                            <text x="468" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#3C3489">自检</text>
-                            <text x="468" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#534AB7">足够具体？</text>
-                            <line x1="524" y1="45" x2="552" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr1)"/>
-                            <rect x="552" y="20" width="88" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
-                            <text x="596" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#3C3489">写回</text>
-                            <text x="596" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#534AB7">更新世界书</text>
-                        </svg>
-                    </figure>
-
-                    <p>以"找到密信"为例：扫描检测到艾琳娜和艾德里安在场；匹配到艾琳娜现有的性格底色是"执念"；判断出信件被找到意味着执念有了着落——<strong>这是一个根本性的变化</strong>；自检确认新描述足够具体（不是"她变得释然了"，而是具体的行为变化）；最终写回更新后的档案：</p>
+                    <p>以“找到密信”为例，真正值得写回的不是“信被找到了”这条事实本身，而是艾琳娜 300 年的执念终于有了着落。于是工作流一写回的是她被这件事改变之后的样子：</p>
 
 <pre><code>更新前的艾琳娜档案（性格片段）：
   底色：执念——300 年来唯一的驱动力就是证明清白
@@ -237,42 +217,11 @@
   新增：会在对话中突然安静下来，不是因为悲伤，而是因为不习惯没有目标的感觉
   新增：对艾德里安的信任从"你是唯一愿意帮我的人"变成了更深的羁绊</code></pre>
 
-                    <p>关键设计：工作流一只在角色有变化时才写入。如果这轮对话只是日常闲聊，没有角色展现新的侧面，工作流一可以什么都不输出——零写入。但像"找到密信"这样的事件，会触发一次实质性的档案更新。</p>
-
-                    <p>这意味着世界书里的角色档案是<strong>活的</strong>。艾琳娜在第一次出场时只有"被囚禁的幽灵公主"的基础设定；随着剧情推进，她的性格描述会越来越丰富——从执念到释然，从孤独到信任。角色在「成长」，而这种成长是自动发生的。</p>
+                    <p>这意味着世界书里的角色档案是<strong>活的</strong>——角色会随着剧情推进自动成长，从执念走向释然，从孤独走向信任。</p>
 
                     <h3 id="flow2">工作流二：角色记忆更新——「记住了什么」</h3>
 
-                    <p>工作流二的任务是：<strong>以每个在场角色的主观视角，记录这轮对话中值得记住的事，写回世界书。</strong></p>
-
-                    <p>记忆和档案的本质区别在于视角。档案是第三方观察者写的「这个人是什么样的」，记忆是角色自己写的「我觉得发生了什么」。工作流二会这样处理"找到密信"：</p>
-
-                    <figure class="svg-figure">
-                        <svg width="100%" viewBox="0 0 680 90" xmlns="http://www.w3.org/2000/svg">
-                            <defs><marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
-                            <rect x="40" y="20" width="100" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-                            <text x="90" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#085041">读取人设</text>
-                            <text x="90" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#0F6E56">角色关注什么</text>
-                            <line x1="140" y1="45" x2="168" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr2)"/>
-                            <rect x="168" y="20" width="100" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-                            <text x="218" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#085041">视角过滤</text>
-                            <text x="218" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#0F6E56">对角色重要吗</text>
-                            <line x1="268" y1="45" x2="296" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr2)"/>
-                            <rect x="296" y="20" width="100" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-                            <text x="346" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#085041">主观记录</text>
-                            <text x="346" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#0F6E56">用角色语气</text>
-                            <line x1="396" y1="45" x2="424" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr2)"/>
-                            <rect x="424" y="20" width="100" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-                            <text x="474" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#085041">衰退处理</text>
-                            <text x="474" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#0F6E56">近期/沉淀/核心</text>
-                            <line x1="524" y1="45" x2="552" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr2)"/>
-                            <rect x="552" y="20" width="88" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-                            <text x="596" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#085041">写回</text>
-                            <text x="596" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#0F6E56">更新世界书</text>
-                        </svg>
-                    </figure>
-
-                    <p>艾琳娜的性格底色是"执念"，她关注"清白"和"信任"——所以找到密信这件事对她极其重要。工作流二用她的语气写下记忆：</p>
+                    <p>工作流二不追求保存完整事实，而是：<strong>站在角色自己的视角，记录这轮对话中什么值得被记住。</strong>它的核心机制是<strong>性格决定记忆</strong>——AI 先读取角色的人设，再用性格作为滤镜决定“这个角色会注意到什么、会怎么记住”。</p>
 
 <pre><code>艾琳娜的记忆写入：
   [核心记忆] "艾德里安把信件放在我手里的时候，他的手在抖。
@@ -282,40 +231,13 @@
   [近期记忆] "那个冒险者从东塔回来了，手里拿着一封旧信。
    幽灵公主哭了。看来古堡的传说是真的。"</code></pre>
 
-                    <p>同一件事，艾琳娜记住的是情感细节（"他的手在抖"），酒馆老板记住的是事实概况（"冒险者从东塔回来了"）。<strong>性格决定了记忆的内容</strong>——这不是随机的，是工作流二在写记忆之前先读取了角色的性格描述，然后用性格作为滤镜来决定"这个角色会注意到什么、会怎么记住这件事"。</p>
-
-                    <p>记忆还有三层衰退结构（近期 → 沉淀 → 核心）：近期记忆保留细节，时间久了压缩为印象，只有最重要的浓缩为核心记忆永久保留。这让角色既能记住刚刚发生的事的细节，又能保留很久以前的核心印象，同时把中间的普通事件自然淡忘。总容量控制在 500-1500 字/角色。</p>
-
-                    <p>这和 <a href="./intelligent-npc-architecture.html">智能 NPC 系统</a> 的三级记忆在结构上很像，但有一个根本区别：NPC 系统的记忆是<strong>客观压缩</strong>（把对话历史压缩成摘要），而这里的记忆是<strong>主观过滤</strong>——同一件事经过不同角色的性格滤镜，记住的内容完全不同。再加上「篡改」机制（关系变化导致旧记忆被重新解读），记忆系统本身就成了角色性格的一种表达。</p>
+                    <p>同一件事，艾琳娜记住的是情感细节（"他的手在抖"），酒馆老板记住的是事实概况（"冒险者从东塔回来了"）。记忆还有三层衰退结构（近期 → 沉淀 → 核心），总容量控制在 500-1500 字/角色——近期保留细节，时间久了压缩为印象，只有最重要的浓缩为核心记忆永久保留。</p>
 
                     <h3 id="flow3">工作流三：时间线记录——「发生了什么」</h3>
 
-                    <p>工作流三的任务是：<strong>客观记录世界中发生了什么，写回世界书。</strong></p>
+                    <p>工作流三要做的刚好相反：<strong>尽量剥离主观感受，只记录世界客观发生了什么。</strong>时间线是整个系统的骨架——角色记忆会带偏差，角色档案会持续演化，但世界需要一条事实线来锚定一切。</p>
 
-                    <p>时间线是整个系统的「骨架」。角色记忆是主观的、有偏差的、会被篡改的。角色档案是不断演化的。但世界需要一条客观的事实线来锚定一切——什么真的发生了，什么先什么后，什么导致了什么。没有这条线，剧情会自相矛盾。</p>
-
-                    <figure class="svg-figure">
-                        <svg width="100%" viewBox="0 0 680 90" xmlns="http://www.w3.org/2000/svg">
-                            <defs><marker id="arr3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
-                            <rect x="80" y="20" width="112" height="50" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
-                            <text x="136" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#0C447C">事件定级</text>
-                            <text x="136" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#185FA5">A 转折 / B 推进 / C</text>
-                            <line x1="192" y1="45" x2="220" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr3)"/>
-                            <rect x="220" y="20" width="112" height="50" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
-                            <text x="276" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#0C447C">追踪线索</text>
-                            <text x="276" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#185FA5">哪些已解决</text>
-                            <line x1="332" y1="45" x2="360" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr3)"/>
-                            <rect x="360" y="20" width="112" height="50" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
-                            <text x="416" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#0C447C">更新态势</text>
-                            <text x="416" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#185FA5">记录事实和影响</text>
-                            <line x1="472" y1="45" x2="500" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr3)"/>
-                            <rect x="500" y="20" width="100" height="50" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
-                            <text x="550" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#0C447C">压缩</text>
-                            <text x="550" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#185FA5">B 级远期压缩</text>
-                        </svg>
-                    </figure>
-
-                    <p>工作流三会先给这轮事件定级：</p>
+                    <p>因此，工作流三会先给事件定级：</p>
 
                     <table>
                         <thead><tr><th>级别</th><th>定义</th><th>处理方式</th></tr></thead>
@@ -326,7 +248,7 @@
                         </tbody>
                     </table>
 
-                    <p>"找到密信"显然是 A 级事件——它改变了艾琳娜的命运走向。工作流三会这样写入：</p>
+                    <p>“找到密信”显然是 A 级事件——它改变了艾琳娜的命运走向。于是工作流三写回的是这条事实、它的影响，以及由此变化的线索状态：</p>
 
 <pre><code>时间线写入：
   [A 级事件] 艾德里安在东塔密室找到了艾琳娜的密信，
@@ -337,60 +259,46 @@
   - "艾琳娜的清白" → 已解决，移出活跃线索
   - 新增 "艾琳娜的去留" → 清白已证明，她会选择安息还是继续留在人间？</code></pre>
 
-                    <p>注意时间线只记事实，不记感受。"艾琳娜哭了"不会出现在时间线里（那是记忆系统的事），时间线只记"密信被找到，冤案证据链完成"。</p>
-
-                    <p>时间线是三个工作流中唯一没有「性格」的——它不关心谁怎么想，只关心到底发生了什么。正因为它的客观性，才能成为校准另外两个主观系统的锚点。</p>
+                    <p>注意时间线只记事实，不记感受——"艾琳娜哭了"不会出现在时间线里（那是记忆系统的事）。正因为它的客观性，才能成为校准另外两个主观系统的锚点。</p>
 
                     <h2 id="three-as-one">设计决策：为什么这样拆</h2>
 
-                    <p>三个工作流的拆分不是随意的。这一节解释它们如何协同、为什么并行、以及底层的共享结构。</p>
+                    <p>上面解决的是“为什么必须拆成三条”以及“它们分别写什么”。下面再回答两个工程问题：这些结果为什么会在下一轮一起生效，以及为什么选择并行执行。</p>
 
                     <h3 id="how-they-work-together">三个工作流如何协同</h3>
 
-                    <p>三个工作流各自独立写入世界书的不同区域，但它们的输出在下一轮对话中会被一起加载，形成一个完整的世界状态：</p>
-
-<pre><code>"找到密信"之后，下一次艾德里安和艾琳娜对话时：
-
-AI 的上下文中包含：
-  ✅ 工作流一写入的：艾琳娜更新后的档案（执念 → 释然与迷茫）
-  ✅ 工作流二写入的：艾琳娜的核心记忆（"他真的做到了"）
-  ✅ 工作流三写入的：时间线（A 级事件 + 新活跃线索"去留"）
-
-→ AI 看到的艾琳娜已经和上一轮完全不同了
-→ 她不会再说"帮我找到信件"，而是可能说：
-  "艾德里安......我现在自由了。可是......自由之后该做什么，
-   我想了 300 年都没想过这个问题。"</code></pre>
+                    <p>三个工作流虽然分开写入，但不会分开生效。下一轮对话开始时，动态内容控制器会把角色档案、角色记忆和时间线一起读回 AI 的上下文。于是 AI 看到的不是一个事件的三个碎片，而是一个已经被更新过的完整世界状态。</p>
 
                     <div class="story-line">
-                        <p>三个工作流的分工可以用一句话概括：<strong>「发生了什么」归时间线，「怎么理解」归记忆，「因此变成了什么人」归角色档案。</strong> 三者从不同维度描述同一个世界的变化，合在一起就是完整的动态写入。</p>
+                        <p><strong>时间线</strong>告诉 AI 这件事客观上已经发生，<strong>记忆</strong>告诉 AI 角色如何理解这件事，<strong>角色档案</strong>告诉 AI 这件事已经把角色变成了什么样的人。三者叠在一起，下一轮的艾琳娜才会真正像一个“经历过此事之后的人”。</p>
                     </div>
 
                     <h3 id="why-parallel">为什么要并行而不是串行</h3>
 
-                    <p>三个工作流被设计为并行执行，而不是顺序执行。这不仅仅是为了速度——它是一个架构层面的解耦决策。</p>
+                    <p>上面解释的是“为什么要拆成三条”；这里要回答的是另一个工程问题：<strong>既然已经拆开，为什么不顺序执行，而要并行执行？</strong></p>
 
-                    <p><strong>独立性</strong>：角色档案的更新不依赖记忆更新的结果，记忆更新不依赖时间线的结果。三者读取的是同一份最新对话内容，但各自从不同的维度分析和产出。它们之间没有数据依赖，天然适合并行。</p>
+                    <p><strong>独立性</strong>：角色档案的更新不依赖记忆更新的结果，记忆更新也不依赖时间线的结果。三者读取的是同一份最新对话内容，但各自从不同维度分析和产出，没有数据依赖，天然适合并行。</p>
 
                     <p><strong>容错性</strong>：如果工作流二（记忆更新）因为某个角色的分析过于复杂而超时，工作流一（档案更新）和工作流三（时间线）不受影响。单个工作流的失败不会拖垮整个系统。</p>
 
-                    <p><strong>灵活性</strong>：三个工作流可以使用不同的生成参数。比如时间线需要客观精确，可以降低创造性；角色记忆需要主观色彩，可以提高创造性。</p>
+                    <p><strong>灵活性</strong>：三个工作流可以分别使用不同的生成参数。比如时间线需要客观精确，可以降低创造性；角色记忆需要主观色彩，可以提高创造性。</p>
 
-                    <p>源码中还有一个有趣的设计：存在一个「全合一」模式，理论上可以在单个工作流中同时执行角色更新 + 记忆 + 时间线。但作者选择了拆分为三个独立工作流。这个选择体现了一个工程判断——<strong>单个 AI 请求同时处理三种不同视角的任务，质量会下降；拆开后每个工作流可以专注于一个视角，输出质量更高。</strong> 这种「主进程 + 异步子进程」的解耦模式在复杂系统中很常见——<a href="./claude-code-context-compression.html">Claude Code 的源码</a>中也有类似设计，主对话进程之外启动独立子进程处理上下文压缩和索引更新。</p>
+                    <p>源码里其实保留了一个「全合一」模式，理论上可以在单个工作流里同时处理角色更新、记忆和时间线。但作者最终没有采用它——因为单个 AI 请求同时处理三种视角，质量会下降；拆开后每个工作流只专注一件事，输出更稳，也更容易调参和排错。</p>
 
                     <h3 id="shared-base">共享底座与差异化启用</h3>
 
-                    <p>三个工作流本质上是同一个 AI 请求模板的三个变体。它们共享同一套 32 个提示词节点（系统指令、创作原则、输出格式、聊天记录等），只在「做什么」和「怎么想」上不同。差异通过两类节点控制：</p>
+                    <p>如果继续往实现层看，会发现这三条工作流并不是三套完全独立的 Prompt，而是同一个请求模板的三个变体。它们共享系统指令、创作原则、输出格式、聊天记录等公共节点，只在「做什么」和「怎么分析」上切换专属节点：</p>
 
                     <table>
-                        <thead><tr><th></th><th>工作流一<br>角色更新</th><th>工作流二<br>记忆更新</th><th>工作流三<br>时间线</th></tr></thead>
+                        <thead><tr><th></th><th>工作流一<br>角色档案更新</th><th>工作流二<br>角色记忆更新</th><th>工作流三<br>时间线记录</th></tr></thead>
                         <tbody>
                             <tr><td><strong>做什么</strong>（系统指南）</td><td>角色档案指南</td><td>角色记忆指南</td><td>时间线指南</td></tr>
-                            <tr><td><strong>怎么想</strong>（思维链）</td><td>扫描→匹配→判断→自检→写回</td><td>读人设→视角过滤→主观记录→衰退→篡改</td><td>分级→追踪线索→更新态势→压缩</td></tr>
-                            <tr><td><strong>其余 28 个共享节点</strong></td><td colspan="3" style="text-align:center">✅ 全部开启（创作原则、输出格式、聊天记录、人格锚定等）</td></tr>
+                            <tr><td><strong>怎么分析</strong>（专属思路）</td><td>扫描 → 匹配 → 判断 → 自检 → 写回</td><td>读人设 → 视角过滤 → 主观记录 → 衰退 → 篡改</td><td>分级 → 追踪线索 → 更新态势 → 压缩</td></tr>
+                            <tr><td><strong>共享底座</strong></td><td colspan="3" style="text-align:center">系统指令、创作原则、输出格式、聊天记录、人格锚定等公共节点全部复用</td></tr>
                         </tbody>
                     </table>
 
-                    <p>这种「共享底座 + 差异化插件」的设计让维护成本很低——改一个共享节点，三个工作流同时生效；加一个新工作流，只需要写两个新节点（指南 + 思维链），其余全部复用。</p>
+                    <p>这种「共享底座 + 差异化插件」的设计，把维护成本压得很低——公共规则改一次，三条工作流同时生效；新增一种写回能力，也只需要补它自己的专属指南和分析路径。</p>
 
                     <hr>
 
@@ -445,7 +353,7 @@ AI 的上下文中包含：
                         <li><strong>AI 回复</strong>：扫描最近几轮 AI 回复中的角色名/别名</li>
                     </ol>
 
-                    <p>三个来源的结果合并去重后，控制器为每个检测到的角色加载其完整档案——<strong>包括三个后台工作流写入的最新版本</strong>。这就是「写」和「读」的闭环：工作流把变化写回世界书，控制器把最新的世界书读出来喂给 AI。</p>
+                    <p>三个来源的结果合并去重后，控制器为每个检测到的角色加载其完整档案——<strong>包括三个自动化工作流写入的最新版本</strong>。这就是「写」和「读」的闭环：工作流把变化写回世界书，控制器把最新的世界书读出来喂给 AI。</p>
 
                     <h3 id="ctrl-event">事件互斥：一次只做一件事</h3>
 
@@ -544,7 +452,7 @@ AI 的上下文中包含：
                         <thead><tr><th>维度</th><th><a href="./intelligent-npc-architecture.html">智能 NPC 系统</a></th><th>本文的世界引擎</th></tr></thead>
                         <tbody>
                             <tr><td><strong>核心问题</strong></td><td>怎么读（组装上下文）</td><td>怎么写（动态更新世界书）</td></tr>
-                            <tr><td><strong>世界书</strong></td><td>静态（策划预写）</td><td>动态（后台工作流持续写入）</td></tr>
+                            <tr><td><strong>世界书</strong></td><td>静态（策划预写）</td><td>动态（自动化工作流持续写入）</td></tr>
                             <tr><td><strong>上下文裁剪</strong></td><td>信息打分排序 + 预算截断</td><td>条件门控（区域/事件/角色互斥加载）</td></tr>
                             <tr><td><strong>记忆</strong></td><td>三级客观压缩（对话→摘要→长期）</td><td>三层主观过滤 + 篡改机制</td></tr>
                             <tr><td><strong>状态更新</strong></td><td>无（静态世界书）</td><td>三个异步并行工作流</td></tr>
