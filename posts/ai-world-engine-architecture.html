@@ -3,43 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>构建沉浸世界的智能 NPC（四）：让世界真正的动态运行 - Ash's Blog</title>
+    <title>构建沉浸世界的智能 NPC（四）：让世界真正动态运行 - Ash's Blog</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,600&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            mermaid.initialize({
-                startOnLoad: true,
-                theme: 'base',
-                themeVariables: {
-                    background: '#f3ede4',
-                    primaryColor: '#eae3d8',
-                    primaryBorderColor: '#ddd6cb',
-                    primaryTextColor: '#3d3929',
-                    secondaryColor: '#eae3d8',
-                    secondaryBorderColor: '#ddd6cb',
-                    secondaryTextColor: '#3d3929',
-                    tertiaryColor: '#eae3d8',
-                    tertiaryBorderColor: '#ddd6cb',
-                    tertiaryTextColor: '#3d3929',
-                    lineColor: '#b0a99e',
-                    textColor: '#3d3929',
-                    fontSize: '14px',
-                    fontFamily: '"Source Serif 4", "DFSong Std", serif'
-                },
-                flowchart: {
-                    htmlLabels: true,
-                    curve: 'basis',
-                    padding: 16,
-                    nodeSpacing: 40,
-                    rankSpacing: 50
-                }
-            });
-        });
-    </script>
+    <style>
+        .svg-figure {
+            margin: 28px 0;
+            padding: 24px;
+            background: var(--color-bg);
+            border: 1px solid var(--color-border-light);
+            border-radius: var(--radius-md);
+            overflow-x: auto;
+        }
+        .svg-figure svg {
+            display: block;
+            margin: 0 auto;
+        }
+        .svg-figure figcaption {
+            text-align: center;
+            font-size: 0.82rem;
+            color: var(--color-text-muted);
+            margin-top: 12px;
+            font-style: italic;
+        }
+    </style>
 </head>
 <body>
     <header class="site-header">
@@ -82,7 +71,7 @@
         <article class="article-content">
             <header class="article-header">
                 <time datetime="2026-04-07">2026 年 4 月 7 日</time>
-                <h1>构建沉浸世界的智能 NPC（四）：让世界真正的动态运行</h1>
+                <h1>构建沉浸世界的智能 NPC（四）：让世界真正动态运行</h1>
                 <div class="article-tags">
                     <span class="tag">AI</span>
                     <span class="tag">系统架构</span>
@@ -146,17 +135,44 @@
 
                     <p>这三个工作流是完全隐性的——用户看到的只是 AI 的故事回复，不知道后台在同时执行三个写入任务。它们的输出不会出现在用户的界面上，而是被静默地写回世界书。</p>
 
-                    <div class="mermaid-wrapper">
-                        <div class="mermaid">
-graph LR
-    dialogue["一轮对话结束"] --> flow1["工作流一\n角色档案更新"] & flow2["工作流二\n角色记忆更新"] & flow3["工作流三\n时间线记录"]
-    flow1 --> worldbook["世界书更新完成"]
-    flow2 --> worldbook
-    flow3 --> worldbook
-    worldbook --> next["下一轮对话\n读取最新世界书"]
-                        </div>
-                        <div class="mermaid-caption">三个工作流从同一轮对话出发，并行写入世界书的不同区域</div>
-                    </div>
+                    <figure class="svg-figure">
+                        <svg width="100%" viewBox="0 0 680 320" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </marker>
+                            </defs>
+                            <!-- 左侧：对话触发 -->
+                            <rect x="40" y="125" width="120" height="50" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+                            <text x="100" y="150" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#444441">一轮对话结束</text>
+                            <!-- 三条分叉线 -->
+                            <path d="M 160 150 L 200 150 L 200 70" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+                            <line x1="160" y1="150" x2="230" y2="150" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+                            <path d="M 160 150 L 200 150 L 200 230" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+                            <!-- 中间：三个并行工作流（Structural 容器） -->
+                            <rect x="230" y="40" width="220" height="60" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+                            <text x="340" y="60" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#3C3489">角色档案更新</text>
+                            <text x="340" y="80" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="12" font-weight="400" fill="#534AB7">变成了什么人</text>
+                            <rect x="230" y="120" width="220" height="60" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+                            <text x="340" y="140" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#085041">角色记忆更新</text>
+                            <text x="340" y="160" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="12" font-weight="400" fill="#0F6E56">记住了什么</text>
+                            <rect x="230" y="200" width="220" height="60" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+                            <text x="340" y="220" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#0C447C">时间线记录</text>
+                            <text x="340" y="240" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="12" font-weight="400" fill="#185FA5">发生了什么</text>
+                            <!-- 三条汇合线 -->
+                            <path d="M 450 70 L 490 70 L 490 150" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+                            <line x1="450" y1="150" x2="500" y2="150" stroke="#888780" stroke-width="1.5"/>
+                            <path d="M 450 230 L 490 230 L 490 150" fill="none" stroke="#888780" stroke-width="1.5"/>
+                            <!-- 右侧：世界书更新 + 闭环 -->
+                            <rect x="500" y="125" width="140" height="50" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+                            <text x="570" y="143" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#633806">世界书</text>
+                            <text x="570" y="161" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="12" font-weight="400" fill="#854F0B">更新完成</text>
+                            <!-- 闭环返回箭头 -->
+                            <path d="M 570 175 L 570 290 L 100 290 L 100 175" fill="none" stroke="#888780" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+                            <text x="340" y="282" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="12" font-weight="400" fill="#888780">下一轮对话读取最新世界书</text>
+                        </svg>
+                        <figcaption>三个工作流从同一轮对话出发，并行写入世界书的不同区域，形成持续闭环</figcaption>
+                    </figure>
 
                     <p>接下来用艾琳娜的例子，逐一看看每个工作流在"找到密信"这轮对话后会做什么。</p>
 
@@ -166,17 +182,30 @@ graph LR
 
                     <p>每个角色的档案包含基础信息、性格描述、不同场景下的行为模式等（这个结构在 <a href="./character-palette-prompt-engineering.html">《用文字创造角色》</a> 中有详细解释）。工作流一会按以下步骤分析这轮对话：</p>
 
-                    <div class="mermaid-wrapper">
-                        <div class="mermaid">
-graph LR
-    scan["扫描\n这轮对话出现了谁"]
-    match["匹配\n读取现有角色档案"]
-    judge["判断\n角色发生根本性变化"]
-    check["自检\n新内容是否足够具体"]
-    write["写回\n更新档案写入世界书"]
-    scan --> match --> judge --> check --> write
-                        </div>
-                    </div>
+                    <figure class="svg-figure">
+                        <svg width="100%" viewBox="0 0 680 90" xmlns="http://www.w3.org/2000/svg">
+                            <defs><marker id="arr1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+                            <rect x="40" y="20" width="88" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+                            <text x="84" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#3C3489">扫描</text>
+                            <text x="84" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#534AB7">谁在场</text>
+                            <line x1="128" y1="45" x2="156" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr1)"/>
+                            <rect x="156" y="20" width="88" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+                            <text x="200" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#3C3489">匹配</text>
+                            <text x="200" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#534AB7">读取档案</text>
+                            <line x1="244" y1="45" x2="272" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr1)"/>
+                            <rect x="272" y="20" width="112" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+                            <text x="328" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#3C3489">判断</text>
+                            <text x="328" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#534AB7">根本性变化？</text>
+                            <line x1="384" y1="45" x2="412" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr1)"/>
+                            <rect x="412" y="20" width="112" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+                            <text x="468" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#3C3489">自检</text>
+                            <text x="468" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#534AB7">足够具体？</text>
+                            <line x1="524" y1="45" x2="552" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr1)"/>
+                            <rect x="552" y="20" width="88" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+                            <text x="596" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#3C3489">写回</text>
+                            <text x="596" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#534AB7">更新世界书</text>
+                        </svg>
+                    </figure>
 
                     <p>以"找到密信"为例：扫描检测到艾琳娜和艾德里安在场；匹配到艾琳娜现有的性格底色是"执念"；判断出信件被找到意味着执念有了着落——<strong>这是一个根本性的变化</strong>；自检确认新描述足够具体（不是"她变得释然了"，而是具体的行为变化）；最终写回更新后的档案：</p>
 
@@ -199,17 +228,30 @@ graph LR
 
                     <p>记忆和档案的本质区别在于视角。档案是第三方观察者写的「这个人是什么样的」，记忆是角色自己写的「我觉得发生了什么」。工作流二会这样处理"找到密信"：</p>
 
-                    <div class="mermaid-wrapper">
-                        <div class="mermaid">
-graph LR
-    persona["读取人设\n角色关注什么"]
-    filter["视角过滤\n对这个角色重要吗"]
-    record["主观记录\n用角色语气写下记忆"]
-    decay["衰退处理\n近期/沉淀/核心分级"]
-    writeback["写回\n更新记忆写入世界书"]
-    persona --> filter --> record --> decay --> writeback
-                        </div>
-                    </div>
+                    <figure class="svg-figure">
+                        <svg width="100%" viewBox="0 0 680 90" xmlns="http://www.w3.org/2000/svg">
+                            <defs><marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+                            <rect x="40" y="20" width="100" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+                            <text x="90" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#085041">读取人设</text>
+                            <text x="90" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#0F6E56">角色关注什么</text>
+                            <line x1="140" y1="45" x2="168" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr2)"/>
+                            <rect x="168" y="20" width="100" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+                            <text x="218" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#085041">视角过滤</text>
+                            <text x="218" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#0F6E56">对角色重要吗</text>
+                            <line x1="268" y1="45" x2="296" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr2)"/>
+                            <rect x="296" y="20" width="100" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+                            <text x="346" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#085041">主观记录</text>
+                            <text x="346" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#0F6E56">用角色语气</text>
+                            <line x1="396" y1="45" x2="424" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr2)"/>
+                            <rect x="424" y="20" width="100" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+                            <text x="474" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#085041">衰退处理</text>
+                            <text x="474" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#0F6E56">近期/沉淀/核心</text>
+                            <line x1="524" y1="45" x2="552" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr2)"/>
+                            <rect x="552" y="20" width="88" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+                            <text x="596" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#085041">写回</text>
+                            <text x="596" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#0F6E56">更新世界书</text>
+                        </svg>
+                    </figure>
 
                     <p>艾琳娜的性格底色是"执念"，她关注"清白"和"信任"——所以找到密信这件事对她极其重要。工作流二用她的语气写下记忆：</p>
 
@@ -233,16 +275,26 @@ graph LR
 
                     <p>时间线是整个系统的「骨架」。角色记忆是主观的、有偏差的、会被篡改的。角色档案是不断演化的。但世界需要一条客观的事实线来锚定一切——什么真的发生了，什么先什么后，什么导致了什么。没有这条线，剧情会自相矛盾。</p>
 
-                    <div class="mermaid-wrapper">
-                        <div class="mermaid">
-graph LR
-    grade["事件定级\nA转折 B推进 C填充"]
-    clue["追踪线索\n哪些线索被解决"]
-    situation["更新态势\n记录事实和影响"]
-    compress["压缩\nB级远期压缩 C级不记录"]
-    grade --> clue --> situation --> compress
-                        </div>
-                    </div>
+                    <figure class="svg-figure">
+                        <svg width="100%" viewBox="0 0 680 90" xmlns="http://www.w3.org/2000/svg">
+                            <defs><marker id="arr3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+                            <rect x="80" y="20" width="112" height="50" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+                            <text x="136" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#0C447C">事件定级</text>
+                            <text x="136" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#185FA5">A 转折 / B 推进 / C</text>
+                            <line x1="192" y1="45" x2="220" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr3)"/>
+                            <rect x="220" y="20" width="112" height="50" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+                            <text x="276" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#0C447C">追踪线索</text>
+                            <text x="276" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#185FA5">哪些已解决</text>
+                            <line x1="332" y1="45" x2="360" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr3)"/>
+                            <rect x="360" y="20" width="112" height="50" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+                            <text x="416" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#0C447C">更新态势</text>
+                            <text x="416" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#185FA5">记录事实和影响</text>
+                            <line x1="472" y1="45" x2="500" y2="45" stroke="#888780" stroke-width="1.5" marker-end="url(#arr3)"/>
+                            <rect x="500" y="20" width="100" height="50" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+                            <text x="550" y="38" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#0C447C">压缩</text>
+                            <text x="550" y="54" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#185FA5">B 级远期压缩</text>
+                        </svg>
+                    </figure>
 
                     <p>工作流三会先给这轮事件定级：</p>
 
@@ -327,6 +379,41 @@ AI 的上下文中包含：
 
                     <p>三个工作流解决了「写」，但写回的内容需要在下一轮对话时被精确地读取出来。一个持续运行的世界可能有数百条设定，全塞进上下文既浪费 token 又会干扰 AI。<a href="./intelligent-npc-architecture.html">上一篇</a>的方案是按分数排序截断，但设定膨胀到数百条时不够用了——你需要的是<strong>按条件精确决定「该加载哪些、不该加载哪些」</strong>。动态内容控制器就是这个方案：一个约 500 行的模板引擎，在每次对话前根据场景变量和对话关键词，通过条件门控决定加载哪些设定。</p>
 
+                    <figure class="svg-figure">
+                        <svg width="100%" viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg">
+                            <defs><marker id="arr4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+                            <!-- 外层容器：动态内容控制器 -->
+                            <rect x="40" y="20" width="600" height="220" rx="16" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+                            <text x="60" y="44" font-family="sans-serif" font-size="14" font-weight="500" fill="#444441">动态内容控制器</text>
+                            <!-- 第一层：大区域 -->
+                            <rect x="60" y="60" width="170" height="60" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+                            <text x="145" y="82" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#633806">大区域</text>
+                            <text x="145" y="100" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#854F0B">区域地图（互斥）</text>
+                            <!-- 箭头 -->
+                            <line x1="230" y1="90" x2="258" y2="90" stroke="#888780" stroke-width="1.5" marker-end="url(#arr4)"/>
+                            <!-- 第二层：场景/势力 -->
+                            <rect x="258" y="60" width="170" height="60" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+                            <text x="343" y="82" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#085041">场景势力</text>
+                            <text x="343" y="100" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#0F6E56">势力设定 + 角色速览</text>
+                            <!-- 箭头 -->
+                            <line x1="428" y1="90" x2="456" y2="90" stroke="#888780" stroke-width="1.5" marker-end="url(#arr4)"/>
+                            <!-- 第三层：角色 -->
+                            <rect x="456" y="60" width="170" height="60" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+                            <text x="541" y="82" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="500" fill="#3C3489">角色</text>
+                            <text x="541" y="100" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#534AB7">完整档案 + 记忆</text>
+                            <!-- 底部：检测来源 -->
+                            <rect x="60" y="145" width="560" height="80" rx="8" fill="none" stroke="#D3D1C7" stroke-width="0.5" stroke-dasharray="4 3"/>
+                            <text x="80" y="166" font-family="sans-serif" font-size="12" font-weight="500" fill="#5F5E5A">检测来源</text>
+                            <rect x="80" y="180" width="140" height="32" rx="6" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="0.5"/>
+                            <text x="150" y="196" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="12" font-weight="400" fill="#5F5E5A">变量层</text>
+                            <rect x="240" y="180" width="140" height="32" rx="6" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="0.5"/>
+                            <text x="310" y="196" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="12" font-weight="400" fill="#5F5E5A">用户消息扫描</text>
+                            <rect x="400" y="180" width="140" height="32" rx="6" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="0.5"/>
+                            <text x="470" y="196" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="12" font-weight="400" fill="#5F5E5A">AI 回复扫描</text>
+                        </svg>
+                        <figcaption>从粗到细的渐进式加载：大区域 → 场景势力 → 角色，三个检测来源合并去重后触发加载</figcaption>
+                    </figure>
+
                     <h3 id="ctrl-detect">角色检测：谁在场就加载谁</h3>
 
                     <p>控制器内嵌了一个包含所有角色名和别名的映射表。比如玩家可能叫"艾琳娜"，也可能叫"幽灵公主"或"公主"——别名表确保无论用什么称呼，系统都能识别并加载正确的角色档案。</p>
@@ -375,6 +462,40 @@ AI 的上下文中包含：
                     <h2 id="lifecycle">一次完整对话的生命周期</h2>
 
                     <p>把上面所有模块串起来——读、生成、写回、再读——以"艾德里安找到密信"为例，一次完整对话的生命周期：</p>
+
+                    <figure class="svg-figure">
+                        <svg width="100%" viewBox="0 0 680 140" xmlns="http://www.w3.org/2000/svg">
+                            <defs><marker id="arr5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+                            <!-- 步骤 1：读 -->
+                            <rect x="40" y="30" width="90" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+                            <text x="85" y="48" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#085041">① 读</text>
+                            <text x="85" y="65" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#0F6E56">加载世界书</text>
+                            <line x1="130" y1="55" x2="158" y2="55" stroke="#0F6E56" stroke-width="1.5" marker-end="url(#arr5)"/>
+                            <!-- 步骤 2：生成 -->
+                            <rect x="158" y="30" width="90" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+                            <text x="203" y="48" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#3C3489">② 生成</text>
+                            <text x="203" y="65" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#534AB7">AI 回复</text>
+                            <line x1="248" y1="55" x2="276" y2="55" stroke="#534AB7" stroke-width="1.5" marker-end="url(#arr5)"/>
+                            <!-- 步骤 3：写回 -->
+                            <rect x="276" y="30" width="100" height="50" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+                            <text x="326" y="48" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#633806">③ 写回</text>
+                            <text x="326" y="65" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#854F0B">三个工作流</text>
+                            <line x1="376" y1="55" x2="404" y2="55" stroke="#BA7517" stroke-width="1.5" marker-end="url(#arr5)"/>
+                            <!-- 步骤 4：校验 -->
+                            <rect x="404" y="30" width="90" height="50" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+                            <text x="449" y="48" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#444441">④ 校验</text>
+                            <text x="449" y="65" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#5F5E5A">持久化</text>
+                            <line x1="494" y1="55" x2="522" y2="55" stroke="#888780" stroke-width="1.5" marker-end="url(#arr5)"/>
+                            <!-- 步骤 5：渲染 -->
+                            <rect x="522" y="30" width="112" height="50" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+                            <text x="578" y="48" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#444441">⑤ 渲染</text>
+                            <text x="578" y="65" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="11" font-weight="400" fill="#5F5E5A">更新状态面板</text>
+                            <!-- 闭环返回 -->
+                            <path d="M 578 80 L 578 110 L 85 110 L 85 80" fill="none" stroke="#0F6E56" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arr5)"/>
+                            <text x="340" y="124" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="12" font-weight="400" fill="#0F6E56">↩ 下一轮：回到 ① 读取最新世界书</text>
+                        </svg>
+                        <figcaption>读 → 生成 → 写回 → 校验 → 渲染 → 下一轮读取，世界一轮一轮地转下去</figcaption>
+                    </figure>
 
                     <table>
                         <thead><tr><th>阶段</th><th>执行</th><th>以「找到密信」为例</th></tr></thead>
