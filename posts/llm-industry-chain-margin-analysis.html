@@ -162,150 +162,293 @@
 
                 <p>这一层是当前 AI 产业链利润沉淀最多的一层。我想用一个类比来讲它：<strong>计算层就是"中国特色房地产行业"。</strong></p>
 
-                <table>
-                    <thead><tr><th>房地产角色</th><th>计算层对应</th><th>当前状态</th></tr></thead>
-                    <tbody>
-                        <tr><td><strong>地方政府（卖地）</strong></td><td>NVIDIA（卖 GPU）</td><td><strong>利润沉淀王</strong></td></tr>
-                        <tr><td><strong>土拍成本占房价 60%+</strong></td><td>GPU 占服务器 BOM 60-70%</td><td>决定一切</td></tr>
-                        <tr><td><strong>房开企业（万科保利）</strong></td><td>服务器组装厂（超微 / 工业富联 / 戴尔）</td><td>周期性微利</td></tr>
-                        <tr><td><strong>钢筋水泥</strong></td><td>HBM 内存（海力士 / 三星 / 美光）</td><td>当前赚钱，长期看产能</td></tr>
-                        <tr><td><strong>家装建材</strong></td><td>数据中心配套（伊顿 / Vertiv）</td><td>真闷声发财</td></tr>
-                        <tr><td><strong>物业 / 二手房中介</strong></td><td>Neocloud（CoreWeave）</td><td>故事大于实质</td></tr>
-                        <tr><td><strong>购房者</strong></td><td>模型公司 + 应用公司</td><td>在为整个链条买单</td></tr>
-                    </tbody>
-                </table>
+                <!-- ==================== Interactive Profit Donut Component ==================== -->
+                <style>
+                    .profit-donut {
+                        margin: 36px 0;
+                        padding: 28px 24px 20px;
+                        background: #faf7ef;
+                        border: 1px solid #e8e4d8;
+                        border-radius: 8px;
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+                    }
+                    .profit-donut__header { text-align: center; margin-bottom: 18px; }
+                    .profit-donut__title { font-size: 15px; font-weight: 600; color: #1a3a5c; letter-spacing: 0.3px; }
+                    .profit-donut__subtitle { font-size: 11px; color: #888780; margin-top: 4px; }
+                    .profit-donut__toggle {
+                        display: inline-flex; gap: 0; margin-top: 14px;
+                        border: 1px solid #d4d0c0; border-radius: 6px; overflow: hidden;
+                    }
+                    .profit-donut__toggle button {
+                        background: transparent; border: 0; padding: 6px 14px;
+                        font-size: 12px; color: #5f5e5a; cursor: pointer;
+                        font-family: inherit; transition: background 0.15s;
+                    }
+                    .profit-donut__toggle button + button { border-left: 1px solid #d4d0c0; }
+                    .profit-donut__toggle button:hover { background: #efeadc; }
+                    .profit-donut__toggle button.is-active { background: #1a3a5c; color: #fff; }
+                    .profit-donut__charts {
+                        display: flex; align-items: flex-start; justify-content: center;
+                        gap: 30px; flex-wrap: wrap;
+                    }
+                    .profit-donut__chart { flex: 0 1 360px; min-width: 280px; position: relative; }
+                    .profit-donut__chart-title { text-align: center; font-size: 13px; font-weight: 600; color: #1a3a5c; margin-bottom: 2px; }
+                    .profit-donut__chart-sub { text-align: center; font-size: 10px; color: #888780; margin-bottom: 8px; }
+                    .profit-donut__chart svg { display: block; width: 100%; height: auto; }
+                    .profit-donut__seg {
+                        cursor: pointer;
+                        transition: opacity 0.18s, transform 0.18s;
+                        transform-origin: center;
+                    }
+                    .profit-donut__chart.is-dimmed .profit-donut__seg { opacity: 0.28; }
+                    .profit-donut__chart .profit-donut__seg.is-active {
+                        opacity: 1;
+                        filter: drop-shadow(0 2px 6px rgba(26, 58, 92, 0.25));
+                    }
+                    .profit-donut__center-pct {
+                        font-size: 24px; font-weight: 700; fill: #1a3a5c;
+                        transition: opacity 0.18s;
+                    }
+                    .profit-donut__center-label { font-size: 10px; fill: #888780; }
+                    .profit-donut__legend {
+                        margin-top: 14px;
+                        display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px;
+                    }
+                    .profit-donut__legend-row {
+                        display: flex; align-items: center; gap: 8px;
+                        padding: 5px 8px; border-radius: 4px;
+                        cursor: pointer; transition: background 0.15s;
+                        font-size: 12px; color: #444441;
+                    }
+                    .profit-donut__legend-row:hover, .profit-donut__legend-row.is-active { background: #efeadc; }
+                    .profit-donut__legend-dot {
+                        width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
+                    }
+                    .profit-donut__legend-name { flex: 1; }
+                    .profit-donut__legend-pct { font-weight: 600; color: #1a3a5c; min-width: 32px; text-align: right; }
+                    .profit-donut__compare { transition: opacity 0.3s, max-width 0.3s; }
+                    .profit-donut.compare-off .profit-donut__compare { display: none; }
+                    .profit-donut__tooltip {
+                        position: absolute; pointer-events: none;
+                        background: #1a3a5c; color: #fff;
+                        padding: 10px 14px; border-radius: 6px;
+                        font-size: 12px; line-height: 1.45;
+                        box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+                        opacity: 0; transition: opacity 0.15s;
+                        z-index: 10; max-width: 240px;
+                    }
+                    .profit-donut__tooltip.is-visible { opacity: 1; }
+                    .profit-donut__tooltip-name { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+                    .profit-donut__tooltip-pct { color: #e8743b; font-weight: 700; font-size: 16px; }
+                    .profit-donut__tooltip-role { color: #d4d0c0; font-size: 11px; margin: 4px 0 6px; font-style: italic; }
+                    .profit-donut__tooltip-cos { color: #fff; font-size: 11px; opacity: 0.85; }
+                    .profit-donut__bottom {
+                        text-align: center; margin-top: 18px; padding-top: 14px;
+                        border-top: 1px dashed #dcd8c8;
+                        font-size: 13px; font-weight: 600; color: #1a3a5c;
+                    }
+                    .profit-donut__caption {
+                        text-align: center; font-size: 12px; color: #888780;
+                        margin-top: 10px; font-style: italic;
+                    }
+                    @media (max-width: 600px) {
+                        .profit-donut__legend { grid-template-columns: 1fr; }
+                        .profit-donut__charts { gap: 20px; }
+                    }
+                </style>
 
-                <figure class="profit-comparison-figure" style="margin: 36px 0; padding: 24px; background: #faf7ef; border: 1px solid #e8e4d8; border-radius: 8px;">
-                    <svg width="100%" viewBox="0 0 760 480" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
-                        <!-- ========= Master Title ========= -->
-                        <text x="380" y="26" text-anchor="middle" font-size="14" font-weight="600" fill="#1a3a5c" letter-spacing="0.5">两个产业，同一个利润分布逻辑</text>
-                        <text x="380" y="44" text-anchor="middle" font-size="11" fill="#888780">数字为粗略估算，用于结构对比</text>
+                <figure class="profit-donut" id="profit-donut">
+                    <div class="profit-donut__header">
+                        <div class="profit-donut__title">两个产业，同一个利润分布逻辑</div>
+                        <div class="profit-donut__subtitle">数字为粗略估算，用于结构对比 · 鼠标悬停或点击查看详情</div>
+                        <div class="profit-donut__toggle" role="tablist">
+                            <button type="button" data-mode="compare" class="is-active">对比房地产</button>
+                            <button type="button" data-mode="single">只看计算层</button>
+                        </div>
+                    </div>
 
-                        <!-- ========= LEFT: COMPUTE LAYER (main, r_out=110, r_in=68) ========= -->
-                        <g transform="translate(190, 250)">
-                            <!-- Section title above donut -->
-                            <text x="0" y="-160" text-anchor="middle" font-size="13" font-weight="600" fill="#1a3a5c">计算层利润分布</text>
-                            <text x="0" y="-144" text-anchor="middle" font-size="10" fill="#888780">2026 估算</text>
+                    <div class="profit-donut__charts">
+                        <!-- ===== Compute Layer (main) ===== -->
+                        <div class="profit-donut__chart" data-chart="compute">
+                            <div class="profit-donut__chart-title">计算层利润分布</div>
+                            <div class="profit-donut__chart-sub">2026 估算 · 100% 利润池</div>
+                            <svg viewBox="-160 -150 320 320" xmlns="http://www.w3.org/2000/svg" aria-label="计算层利润分布环形图">
+                                <g class="profit-donut__segs"></g>
+                                <text class="profit-donut__center-pct" x="0" y="-2" text-anchor="middle">100%</text>
+                                <text class="profit-donut__center-label" x="0" y="14" text-anchor="middle">利润池</text>
+                            </svg>
+                            <div class="profit-donut__legend" data-legend="compute"></div>
+                        </div>
 
-                            <!-- 1. NVIDIA 55% — deep navy DOMINANT -->
-                            <path d="M 0.00,-110.00 A 110,110 0 1,1 -33.99,104.62 L -21.01,64.67 A 68,68 0 1,0 0.00,-68.00 Z" fill="#1a3a5c"/>
-                            <!-- 2. HBM 12% — warm orange (accent) -->
-                            <path d="M -33.99,104.62 A 110,110 0 0,1 -96.39,52.99 L -59.59,32.76 A 68,68 0 0,0 -21.01,64.67 Z" fill="#e8743b"/>
-                            <!-- 3. CSP AI 12% — mid navy -->
-                            <path d="M -96.39,52.99 A 110,110 0 0,1 -106.54,-27.36 L -65.86,-16.91 A 68,68 0 0,0 -59.59,32.76 Z" fill="#5a7a9c"/>
-                            <!-- 4. DC Equipment 10% — sand -->
-                            <path d="M -106.54,-27.36 A 110,110 0 0,1 -70.12,-84.76 L -43.34,-52.39 A 68,68 0 0,0 -65.86,-16.91 Z" fill="#d4a574"/>
-                            <!-- 5. Server OEM 7% — light gray -->
-                            <path d="M -70.12,-84.76 A 110,110 0 0,1 -27.36,-106.54 L -16.91,-65.86 A 68,68 0 0,0 -43.34,-52.39 Z" fill="#a8a8a8"/>
-                            <!-- 6. Neocloud 4% — pale gray -->
-                            <path d="M -27.36,-106.54 A 110,110 0 0,1 -0.00,-110.00 L -0.00,-68.00 A 68,68 0 0,0 -16.91,-65.86 Z" fill="#c8c5bc"/>
+                        <!-- ===== Real Estate (compare) ===== -->
+                        <div class="profit-donut__chart profit-donut__compare" data-chart="realestate">
+                            <div class="profit-donut__chart-title">房地产利润分布</div>
+                            <div class="profit-donut__chart-sub">中国市场结构 · 参照</div>
+                            <svg viewBox="-130 -125 260 260" xmlns="http://www.w3.org/2000/svg" aria-label="房地产利润分布环形图">
+                                <g class="profit-donut__segs"></g>
+                                <text class="profit-donut__center-pct" x="0" y="-2" text-anchor="middle" style="font-size:20px;">100%</text>
+                                <text class="profit-donut__center-label" x="0" y="13" text-anchor="middle">利润池</text>
+                            </svg>
+                            <div class="profit-donut__legend" data-legend="realestate"></div>
+                        </div>
 
-                            <!-- Center text -->
-                            <text x="0" y="-4" text-anchor="middle" font-size="20" font-weight="700" fill="#1a3a5c">100%</text>
-                            <text x="0" y="14" text-anchor="middle" font-size="10" fill="#888780">利润池</text>
+                        <div class="profit-donut__tooltip" id="profit-donut-tooltip"></div>
+                    </div>
 
-                            <!-- ===== Labels with leader lines ===== -->
-                            <!-- NVIDIA 55%: label at right (using mid-angle ~108deg from -90, so right side) -->
-                            <line x1="40" y1="20" x2="135" y2="20" stroke="#1a3a5c" stroke-width="0.8"/>
-                            <text x="140" y="16" font-size="12" font-weight="600" fill="#1a3a5c">NVIDIA</text>
-                            <text x="140" y="32" font-size="14" font-weight="700" fill="#1a3a5c">55%</text>
-                            <text x="140" y="48" font-size="10" fill="#5f5e5a">卖地的地方政府</text>
-
-                            <!-- HBM 12%: label at lower-left -->
-                            <line x1="-82" y1="99" x2="-128" y2="118" stroke="#5f5e5a" stroke-width="0.6"/>
-                            <text x="-132" y="118" text-anchor="end" font-size="11" font-weight="600" fill="#1a3a5c">HBM 内存</text>
-                            <text x="-132" y="132" text-anchor="end" font-size="11" font-weight="700" fill="#e8743b">12%</text>
-
-                            <!-- CSP AI 12%: label at left -->
-                            <line x1="-127" y1="16" x2="-150" y2="16" stroke="#5f5e5a" stroke-width="0.6"/>
-                            <text x="-154" y="12" text-anchor="end" font-size="11" font-weight="600" fill="#1a3a5c">CSP（AI 业务）</text>
-                            <text x="-154" y="26" text-anchor="end" font-size="11" font-weight="700" fill="#5a7a9c">12%</text>
-
-                            <!-- DC Equipment 10%: label at upper-left -->
-                            <line x1="-108" y1="-69" x2="-140" y2="-90" stroke="#5f5e5a" stroke-width="0.6"/>
-                            <text x="-144" y="-92" text-anchor="end" font-size="11" font-weight="600" fill="#1a3a5c">数据中心配套</text>
-                            <text x="-144" y="-78" text-anchor="end" font-size="11" font-weight="700" fill="#1a3a5c">10%</text>
-
-                            <!-- Server OEM 7%: label at top -->
-                            <line x1="-58" y1="-114" x2="-58" y2="-138" stroke="#5f5e5a" stroke-width="0.6"/>
-                            <text x="-58" y="-142" text-anchor="middle" font-size="10" font-weight="600" fill="#5f5e5a">服务器 OEM</text>
-                            <text x="-58" y="-156" text-anchor="middle" font-size="10" font-weight="700" fill="#5f5e5a">7%</text>
-
-                            <!-- Neocloud 4%: label at top -->
-                            <line x1="-16" y1="-127" x2="0" y2="-156" stroke="#888780" stroke-width="0.6"/>
-                            <text x="6" y="-156" text-anchor="start" font-size="10" font-weight="600" fill="#888780">Neocloud</text>
-                            <text x="6" y="-142" text-anchor="start" font-size="10" font-weight="700" fill="#888780">4%</text>
-                        </g>
-
-                        <!-- Bottom annotation for compute -->
-                        <text x="190" y="425" text-anchor="middle" font-size="10.5" fill="#5f5e5a" font-style="italic">NVIDIA 一家独占过半，其他人在分剩下的</text>
-
-                        <!-- ========= Vertical divider ========= -->
-                        <line x1="395" y1="80" x2="395" y2="410" stroke="#dcd8c8" stroke-width="0.8" stroke-dasharray="3,3"/>
-
-                        <!-- ========= RIGHT: REAL ESTATE (smaller, r_out=80, r_in=50) ========= -->
-                        <g transform="translate(570, 250)">
-                            <!-- Section title -->
-                            <text x="0" y="-130" text-anchor="middle" font-size="12" font-weight="600" fill="#1a3a5c">房地产利润分布</text>
-                            <text x="0" y="-114" text-anchor="middle" font-size="9.5" fill="#888780">中国市场结构（参照）</text>
-
-                            <!-- 1. 地方政府土拍 50% — deep navy -->
-                            <path d="M 0.00,-80.00 A 80,80 0 0,1 0.00,80.00 L 0.00,50.00 A 50,50 0 0,0 0.00,-50.00 Z" fill="#1a3a5c"/>
-                            <!-- 2. 银行（房贷利息）18% — warm orange -->
-                            <path d="M 0.00,80.00 A 80,80 0 0,1 -72.39,34.06 L -45.24,21.29 A 50,50 0 0,0 0.00,50.00 Z" fill="#e8743b"/>
-                            <!-- 3. 钢筋水泥 12% — mid navy -->
-                            <path d="M -72.39,34.06 A 80,80 0 0,1 -76.08,-24.72 L -47.55,-15.45 A 50,50 0 0,0 -45.24,21.29 Z" fill="#5a7a9c"/>
-                            <!-- 4. 装修家装 8% — sand -->
-                            <path d="M -76.08,-24.72 A 80,80 0 0,1 -54.76,-58.32 L -34.23,-36.45 A 50,50 0 0,0 -47.55,-15.45 Z" fill="#d4a574"/>
-                            <!-- 5. 房开企业 7% — light gray -->
-                            <path d="M -54.76,-58.32 A 80,80 0 0,1 -24.72,-76.08 L -15.45,-47.55 A 50,50 0 0,0 -34.23,-36.45 Z" fill="#a8a8a8"/>
-                            <!-- 6. 中介 5% — pale gray -->
-                            <path d="M -24.72,-76.08 A 80,80 0 0,1 -0.00,-80.00 L -0.00,-50.00 A 50,50 0 0,0 -15.45,-47.55 Z" fill="#c8c5bc"/>
-
-                            <!-- Center text -->
-                            <text x="0" y="-2" text-anchor="middle" font-size="16" font-weight="700" fill="#1a3a5c">100%</text>
-                            <text x="0" y="13" text-anchor="middle" font-size="9" fill="#888780">利润池</text>
-
-                            <!-- Labels (compact, right side) -->
-                            <!-- 地方政府 50% — right -->
-                            <line x1="36" y1="0" x2="92" y2="0" stroke="#1a3a5c" stroke-width="0.8"/>
-                            <text x="96" y="-3" font-size="10.5" font-weight="600" fill="#1a3a5c">地方政府（土拍）</text>
-                            <text x="96" y="11" font-size="12" font-weight="700" fill="#1a3a5c">50%</text>
-
-                            <!-- 银行 18% — bottom-left -->
-                            <line x1="-53" y1="83" x2="-78" y2="100" stroke="#5f5e5a" stroke-width="0.6"/>
-                            <text x="-82" y="100" text-anchor="end" font-size="10" font-weight="600" fill="#1a3a5c">银行（按揭利息）</text>
-                            <text x="-82" y="113" text-anchor="end" font-size="10.5" font-weight="700" fill="#e8743b">18%</text>
-
-                            <!-- 钢筋水泥 12% — left -->
-                            <line x1="-98" y1="6" x2="-118" y2="6" stroke="#5f5e5a" stroke-width="0.6"/>
-                            <text x="-122" y="2" text-anchor="end" font-size="10" font-weight="600" fill="#1a3a5c">钢筋水泥</text>
-                            <text x="-122" y="15" text-anchor="end" font-size="10.5" font-weight="700" fill="#5a7a9c">12%</text>
-
-                            <!-- 装修 8% — upper-left -->
-                            <line x1="-83" y1="-53" x2="-110" y2="-70" stroke="#5f5e5a" stroke-width="0.6"/>
-                            <text x="-114" y="-72" text-anchor="end" font-size="10" font-weight="600" fill="#1a3a5c">装修家装</text>
-                            <text x="-114" y="-58" text-anchor="end" font-size="10.5" font-weight="700" fill="#1a3a5c">8%</text>
-
-                            <!-- 房开 7% — top -->
-                            <line x1="-50" y1="-84" x2="-50" y2="-104" stroke="#5f5e5a" stroke-width="0.6"/>
-                            <text x="-50" y="-108" text-anchor="middle" font-size="9.5" font-weight="600" fill="#5f5e5a">房开企业</text>
-                            <text x="-50" y="-120" text-anchor="middle" font-size="9.5" font-weight="700" fill="#5f5e5a">7%</text>
-
-                            <!-- 中介 5% — top right -->
-                            <line x1="-15" y1="-97" x2="6" y2="-120" stroke="#888780" stroke-width="0.6"/>
-                            <text x="10" y="-120" text-anchor="start" font-size="9.5" font-weight="600" fill="#888780">中介</text>
-                            <text x="10" y="-108" text-anchor="start" font-size="9.5" font-weight="700" fill="#888780">5%</text>
-                        </g>
-
-                        <!-- Bottom annotation for real estate -->
-                        <text x="570" y="425" text-anchor="middle" font-size="10.5" fill="#5f5e5a" font-style="italic">地方政府独占过半，其他人在分剩下的</text>
-
-                        <!-- ========= Bottom unifying message ========= -->
-                        <text x="380" y="462" text-anchor="middle" font-size="12" font-weight="600" fill="#1a3a5c">两个产业的"卖地者"都在拿走最大那块蛋糕</text>
-                    </svg>
-                    <figcaption style="text-align:center; font-size:0.82rem; color:#888780; margin-top:12px; font-style:italic;">图：计算层（左，主图）与房地产行业（右，对比）的利润分布。两图结构同构——上游垄断方独占过半，组装/中介环节只能分小份。</figcaption>
+                    <div class="profit-donut__bottom">两个产业的"卖地者"都在拿走最大那块蛋糕</div>
+                    <figcaption class="profit-donut__caption">计算层（主）与房地产行业（参照对比）的利润分布。两图结构同构——上游垄断方独占过半，中游组装/中介只能分小份。</figcaption>
                 </figure>
+
+                <script>
+                (function () {
+                    var COMPUTE = [
+                        { name: 'NVIDIA', role: '卖地的地方政府', companies: 'NVIDIA（GPU 数据中心业务）', pct: 55, color: '#1a3a5c' },
+                        { name: 'HBM 内存', role: '钢筋水泥（阶段性短缺）', companies: 'SK 海力士 · 三星 · 美光', pct: 12, color: '#e8743b' },
+                        { name: 'CSP（AI 业务）', role: '把算力打包零售的二房东', companies: 'AWS · Azure · GCP（AI 业务部分）', pct: 12, color: '#5a7a9c' },
+                        { name: '数据中心配套', role: '家装建材（被低估的暗线）', companies: '伊顿 · Vertiv · 中际旭创 · 新易盛', pct: 10, color: '#d4a574' },
+                        { name: '服务器 OEM', role: '房开企业（周期性建筑工）', companies: '工业富联 · 超微 SMCI · 戴尔', pct: 7, color: '#a8a8a8' },
+                        { name: 'Neocloud', role: '二手房中介（套利型）', companies: 'CoreWeave · Lambda Labs', pct: 4, color: '#c8c5bc' }
+                    ];
+                    var REALESTATE = [
+                        { name: '地方政府（土拍）', role: '卖地的，拿走最大头', companies: '土地财政 · 一线城市占房价 50-60%', pct: 50, color: '#1a3a5c' },
+                        { name: '银行（按揭利息）', role: '资金成本沉淀方', companies: '商业银行房贷利息累计', pct: 18, color: '#e8743b' },
+                        { name: '钢筋水泥', role: '上游建材', companies: '海螺水泥 · 宝钢 · 各类建材厂', pct: 12, color: '#5a7a9c' },
+                        { name: '装修家装', role: '细分赛道闷声发财', companies: '欧派 · 索菲亚 · 各类家装供应商', pct: 8, color: '#d4a574' },
+                        { name: '房开企业', role: '周期性微利', companies: '万科 · 保利 · 碧桂园等开发商', pct: 7, color: '#a8a8a8' },
+                        { name: '中介', role: '套利型生意', companies: '链家 · 贝壳等', pct: 5, color: '#c8c5bc' }
+                    ];
+
+                    function buildDonut(data, rOuter, rInner) {
+                        var cum = 0;
+                        return data.map(function (item, i) {
+                            var startA = (-90 + cum * 3.6) * Math.PI / 180;
+                            var endA   = (-90 + (cum + item.pct) * 3.6) * Math.PI / 180;
+                            var large  = item.pct > 50 ? 1 : 0;
+                            var x1o = rOuter * Math.cos(startA), y1o = rOuter * Math.sin(startA);
+                            var x2o = rOuter * Math.cos(endA),   y2o = rOuter * Math.sin(endA);
+                            var x1i = rInner * Math.cos(startA), y1i = rInner * Math.sin(startA);
+                            var x2i = rInner * Math.cos(endA),   y2i = rInner * Math.sin(endA);
+                            var d = 'M ' + x1o.toFixed(2) + ',' + y1o.toFixed(2)
+                                  + ' A ' + rOuter + ',' + rOuter + ' 0 ' + large + ',1 ' + x2o.toFixed(2) + ',' + y2o.toFixed(2)
+                                  + ' L ' + x2i.toFixed(2) + ',' + y2i.toFixed(2)
+                                  + ' A ' + rInner + ',' + rInner + ' 0 ' + large + ',0 ' + x1i.toFixed(2) + ',' + y1i.toFixed(2)
+                                  + ' Z';
+                            cum += item.pct;
+                            return { d: d, item: item, idx: i };
+                        });
+                    }
+
+                    var root = document.getElementById('profit-donut');
+                    if (!root) return;
+                    var tooltip = document.getElementById('profit-donut-tooltip');
+
+                    function renderChart(chartEl, data, rOuter, rInner) {
+                        var svg = chartEl.querySelector('svg');
+                        var segGroup = chartEl.querySelector('.profit-donut__segs');
+                        var legend = chartEl.querySelector('.profit-donut__legend');
+                        var paths = buildDonut(data, rOuter, rInner);
+
+                        // Render segments
+                        paths.forEach(function (p) {
+                            var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            path.setAttribute('d', p.d);
+                            path.setAttribute('fill', p.item.color);
+                            path.setAttribute('class', 'profit-donut__seg');
+                            path.setAttribute('data-idx', p.idx);
+                            segGroup.appendChild(path);
+                        });
+
+                        // Render legend
+                        data.forEach(function (item, i) {
+                            var row = document.createElement('div');
+                            row.className = 'profit-donut__legend-row';
+                            row.setAttribute('data-idx', i);
+                            row.innerHTML =
+                                '<span class="profit-donut__legend-dot" style="background:' + item.color + '"></span>' +
+                                '<span class="profit-donut__legend-name">' + item.name + '</span>' +
+                                '<span class="profit-donut__legend-pct">' + item.pct + '%</span>';
+                            legend.appendChild(row);
+                        });
+
+                        function activate(idx, evt) {
+                            chartEl.classList.add('is-dimmed');
+                            var segs = segGroup.querySelectorAll('.profit-donut__seg');
+                            var rows = legend.querySelectorAll('.profit-donut__legend-row');
+                            segs.forEach(function (s) { s.classList.toggle('is-active', +s.getAttribute('data-idx') === idx); });
+                            rows.forEach(function (r) { r.classList.toggle('is-active', +r.getAttribute('data-idx') === idx); });
+                            // Update center display
+                            var pct = chartEl.querySelector('.profit-donut__center-pct');
+                            var lbl = chartEl.querySelector('.profit-donut__center-label');
+                            pct.textContent = data[idx].pct + '%';
+                            lbl.textContent = data[idx].name;
+                            // Tooltip
+                            var item = data[idx];
+                            tooltip.innerHTML =
+                                '<div class="profit-donut__tooltip-name">' + item.name + '</div>' +
+                                '<div class="profit-donut__tooltip-pct">' + item.pct + '%</div>' +
+                                '<div class="profit-donut__tooltip-role">' + item.role + '</div>' +
+                                '<div class="profit-donut__tooltip-cos">' + item.companies + '</div>';
+                            tooltip.classList.add('is-visible');
+                            positionTooltip(evt);
+                        }
+
+                        function deactivate() {
+                            chartEl.classList.remove('is-dimmed');
+                            segGroup.querySelectorAll('.profit-donut__seg').forEach(function (s) { s.classList.remove('is-active'); });
+                            legend.querySelectorAll('.profit-donut__legend-row').forEach(function (r) { r.classList.remove('is-active'); });
+                            var pct = chartEl.querySelector('.profit-donut__center-pct');
+                            var lbl = chartEl.querySelector('.profit-donut__center-label');
+                            pct.textContent = '100%';
+                            lbl.textContent = '利润池';
+                            tooltip.classList.remove('is-visible');
+                        }
+
+                        function positionTooltip(evt) {
+                            var rect = root.getBoundingClientRect();
+                            var x = evt.clientX - rect.left + 14;
+                            var y = evt.clientY - rect.top + 14;
+                            // Keep tooltip inside container
+                            var tipW = tooltip.offsetWidth || 220;
+                            if (x + tipW > rect.width - 10) x = evt.clientX - rect.left - tipW - 14;
+                            tooltip.style.left = x + 'px';
+                            tooltip.style.top = y + 'px';
+                        }
+
+                        // Bind events on segments
+                        segGroup.querySelectorAll('.profit-donut__seg').forEach(function (s) {
+                            s.addEventListener('mouseenter', function (e) { activate(+s.getAttribute('data-idx'), e); });
+                            s.addEventListener('mousemove', positionTooltip);
+                            s.addEventListener('mouseleave', deactivate);
+                            s.addEventListener('click', function (e) { activate(+s.getAttribute('data-idx'), e); });
+                        });
+                        // Bind events on legend rows
+                        legend.querySelectorAll('.profit-donut__legend-row').forEach(function (r) {
+                            r.addEventListener('mouseenter', function (e) { activate(+r.getAttribute('data-idx'), e); });
+                            r.addEventListener('mousemove', positionTooltip);
+                            r.addEventListener('mouseleave', deactivate);
+                        });
+                    }
+
+                    var computeChart = root.querySelector('[data-chart="compute"]');
+                    var realChart = root.querySelector('[data-chart="realestate"]');
+                    renderChart(computeChart, COMPUTE, 110, 68);
+                    renderChart(realChart, REALESTATE, 90, 56);
+
+                    // Toggle compare/single
+                    var toggleBtns = root.querySelectorAll('.profit-donut__toggle button');
+                    toggleBtns.forEach(function (btn) {
+                        btn.addEventListener('click', function () {
+                            toggleBtns.forEach(function (b) { b.classList.remove('is-active'); });
+                            btn.classList.add('is-active');
+                            if (btn.getAttribute('data-mode') === 'single') {
+                                root.classList.add('compare-off');
+                            } else {
+                                root.classList.remove('compare-off');
+                            }
+                        });
+                    });
+                })();
+                </script>
 
                 <p>这个类比最妙的地方：<strong>它一眼让人看懂为什么计算层整体暴涨，但只有"卖地的"和"卖钢筋水泥的"能赚到超额利润，其他人都是给 NVIDIA 打工。</strong></p>
 
