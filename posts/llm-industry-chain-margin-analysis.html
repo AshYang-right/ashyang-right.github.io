@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,600&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/d3@7" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12" defer></script>
 </head>
 <body>
     <header class="site-header">
@@ -71,43 +72,46 @@
 
                 <p>我把整个 LLM 产业链拆成了四段：</p>
 
-                <!-- ==================== Value Stack (D3) ==================== -->
+                <!-- ==================== Money Flow Sankey (D3) ==================== -->
                 <style>
-                    .value-stack {
+                    .money-flow {
                         margin: 32px 0;
                         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
                     }
-                    .value-stack__header { text-align: center; margin-bottom: 14px; }
-                    .value-stack__title { font-size: 15px; font-weight: 600; color: #1a3a5c; letter-spacing: 0.3px; }
-                    .value-stack__subtitle { font-size: 11px; color: #888780; margin-top: 4px; }
-                    .value-stack__wrap { position: relative; }
-                    .value-stack svg { display: block; width: 100%; height: auto; overflow: visible; }
-                    .value-stack__seg {
+                    .money-flow__header { text-align: center; margin-bottom: 14px; }
+                    .money-flow__title { font-size: 15px; font-weight: 600; color: #1a3a5c; letter-spacing: 0.3px; }
+                    .money-flow__subtitle { font-size: 11px; color: #888780; margin-top: 4px; }
+                    .money-flow__wrap { position: relative; }
+                    .money-flow svg { display: block; width: 100%; height: auto; overflow: visible; }
+                    .money-flow__node rect {
                         cursor: pointer;
-                        transition: opacity 0.2s, filter 0.2s;
+                        transition: opacity 0.18s, stroke-width 0.18s;
+                        stroke: #fff; stroke-width: 1.2;
                     }
-                    .value-stack.is-focused .value-stack__seg:not(.is-active) { opacity: 0.25; }
-                    .value-stack__seg.is-active { filter: drop-shadow(0 2px 8px rgba(26, 58, 92, 0.3)); }
-                    .value-stack__col-label {
-                        font-size: 13px; font-weight: 600; fill: #1a3a5c;
+                    .money-flow__node text {
+                        cursor: pointer; pointer-events: none;
+                    }
+                    .money-flow__node-name {
+                        font-size: 12px; font-weight: 600; fill: #1a3a5c;
+                    }
+                    .money-flow__node-amount {
+                        font-size: 11px; font-weight: 700;
+                    }
+                    .money-flow__link {
+                        fill: none;
+                        cursor: pointer;
+                        transition: stroke-opacity 0.18s, opacity 0.18s;
+                    }
+                    .money-flow.is-focused .money-flow__node rect:not(.is-related) { opacity: 0.18; }
+                    .money-flow.is-focused .money-flow__node text:not(.is-related) { opacity: 0.25; }
+                    .money-flow.is-focused .money-flow__link:not(.is-related) { opacity: 0.06; }
+                    .money-flow__link.is-related { stroke-opacity: 0.7 !important; }
+                    .money-flow__node rect.is-related { stroke: #1a3a5c; stroke-width: 2; }
+                    .money-flow__direction-arrow {
+                        font-size: 11px; font-weight: 600; fill: #888780;
                         text-anchor: middle;
                     }
-                    .value-stack__col-price {
-                        font-size: 11px; font-weight: 500; fill: #888780;
-                        text-anchor: middle;
-                    }
-                    .value-stack__delta {
-                        font-size: 11.5px; font-weight: 700; fill: #fff;
-                        text-anchor: middle; pointer-events: none;
-                    }
-                    .value-stack__delta-label {
-                        font-size: 10px; font-weight: 500; fill: #fff;
-                        text-anchor: middle; pointer-events: none;
-                        opacity: 0.85;
-                    }
-                    .value-stack__axis text { font-size: 10px; fill: #888780; }
-                    .value-stack__axis line, .value-stack__axis path { stroke: #dcd8c8; }
-                    .value-stack__tooltip {
+                    .money-flow__tooltip {
                         position: absolute; pointer-events: none;
                         background: #1a3a5c; color: #fff;
                         padding: 10px 14px; border-radius: 6px;
@@ -116,255 +120,220 @@
                         opacity: 0; transition: opacity 0.15s;
                         z-index: 10; max-width: 280px;
                     }
-                    .value-stack__tooltip.is-visible { opacity: 1; }
-                    .value-stack__tooltip-name { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
-                    .value-stack__tooltip-prices {
-                        color: #d4d0c0; font-size: 11px; margin-bottom: 6px;
+                    .money-flow__tooltip.is-visible { opacity: 1; }
+                    .money-flow__tooltip-name { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+                    .money-flow__tooltip-amount {
+                        color: #e8743b; font-weight: 700; font-size: 16px; margin-bottom: 6px;
                     }
-                    .value-stack__tooltip-prices strong { color: #e8743b; font-weight: 700; }
-                    .value-stack__tooltip-role {
-                        color: #fff; font-size: 11.5px; margin-bottom: 5px; font-style: italic;
-                    }
-                    .value-stack__tooltip-cos { color: #fff; font-size: 11px; opacity: 0.85; line-height: 1.55; }
-                    .value-stack__caption {
+                    .money-flow__tooltip-desc { color: #fff; font-size: 11.5px; line-height: 1.55; }
+                    .money-flow__caption {
                         text-align: center; font-size: 12px; color: #888780;
                         margin-top: 14px; font-style: italic; line-height: 1.6;
                     }
                 </style>
 
-                <figure class="value-stack" id="value-stack">
-                    <div class="value-stack__header">
-                        <div class="value-stack__title">产业链的价值累加：从一度电到一份订阅</div>
-                        <div class="value-stack__subtitle">每一层叠加在上层成本之上 · 鼠标悬停查看详情</div>
+                <figure class="money-flow" id="money-flow">
+                    <div class="money-flow__header">
+                        <div class="money-flow__title">$100 的旅程：钱从用户出发，被一层层抽走</div>
+                        <div class="money-flow__subtitle">资金流向 ⬅ 反向溯源 · 每层抽走自己的利润，把成本传给上一级</div>
                     </div>
-                    <div class="value-stack__wrap">
-                        <svg viewBox="0 0 960 440" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" aria-label="LLM 产业链价值累加图"></svg>
-                        <div class="value-stack__tooltip" id="value-stack-tooltip"></div>
+                    <div class="money-flow__wrap">
+                        <svg viewBox="0 0 960 480" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" aria-label="资金流向桑基图"></svg>
+                        <div class="money-flow__tooltip" id="money-flow-tooltip"></div>
                     </div>
-                    <figcaption class="value-stack__caption">每根柱子的高度代表该层级的总价（成本 + 溢价）· 柱内顶部高亮色块为本层叠加的溢价空间。Y 轴使用对数刻度——线性刻度下能源段会细到看不见。</figcaption>
+                    <figcaption class="money-flow__caption">主流（横向）从左到右越来越细——这就是"钱被层层抽走"。下方分支节点是每层抽走的利润。后续将支持点击展开查看每层的内部利润构成。</figcaption>
                 </figure>
 
                 <script>
                 (function () {
                     function init() {
-                        if (typeof d3 === 'undefined') { setTimeout(init, 50); return; }
-                        var root = document.getElementById('value-stack');
+                        if (typeof d3 === 'undefined' || typeof d3.sankey === 'undefined') {
+                            setTimeout(init, 50); return;
+                        }
+                        var root = document.getElementById('money-flow');
                         if (!root) return;
-                        var tooltip = d3.select('#value-stack-tooltip');
+                        var tooltip = d3.select('#money-flow-tooltip');
 
-                        // ===== Data: 4 layers, each with cumulative price (USD) =====
-                        // price = upstream cost + this layer's markup
-                        var layers = [
-                            {
-                                id: 'energy',
-                                name: '能源',
-                                price: 0.05,
-                                upstream: 0,
-                                delta: 0.05,
-                                color: '#5a7a9c',
-                                role: '基底成本 · 被管制锁死溢价',
-                                cos: '电力公司毛利被锁在 9-11% ROE · 长江电力是"类债券资产"。真正赚钱的是装机扩产（GE Vernova、伊顿、西门子能源等）',
-                                multiplier: '基底'
-                            },
-                            {
-                                id: 'compute',
-                                name: '计算',
-                                price: 1,
-                                upstream: 0.05,
-                                delta: 0.95,
-                                color: '#1a3a5c',
-                                role: '⭐ 利润沉淀地 · NVIDIA 抽走 70%',
-                                cos: 'NVIDIA（GPU 毛利 75%）+ TSMC + HBM = "卖地的"。AWS 只是把 NVIDIA 算力打包零售的二房东',
-                                multiplier: '× 20'
-                            },
-                            {
-                                id: 'model',
-                                name: '模型',
-                                price: 15,
-                                upstream: 1,
-                                delta: 14,
-                                color: '#e8743b',
-                                role: '⭐ 顶级闭源唯一保留溢价',
-                                cos: 'OpenAI / Anthropic / Google · 溢价 = 能力差 × 时间窗。开源（DeepSeek / Qwen）正在压缩这个窗口。中国独立模型公司两头挨打',
-                                multiplier: '× 15'
-                            },
-                            {
-                                id: 'app',
-                                name: '应用',
-                                price: 20,
-                                upstream: 15,
-                                delta: 5,
-                                color: '#d4a574',
-                                role: '⭐ 利润率最高 · 锚定人的小时费',
-                                cos: 'Cursor / Harvey / Hebbia · 用户付的不是 token 钱，是"我每天效率提升 30%"的钱。高时薪职业（律师 $500/h、程序员 $100/h）的雇主买单',
-                                multiplier: '× 1.3 但毛利最高'
-                            }
+                        // ===== Data =====
+                        // Main flow: user $100 → app receives → model receives → compute receives → energy receives
+                        // Each "receives" node has TWO outflows: profit (down) + cost to upstream (right)
+                        var nodes = [
+                            // Main flow nodes (top row)
+                            { id: 'user',       name: '用户支付',       label: '$100',   col: 0, type: 'main',   color: '#1a3a5c',
+                              desc: '终端用户为 AI 应用付费的起点 —— 个人订阅 ChatGPT Plus/Claude Pro，或企业为 Cursor、Harvey 等垂直工具买单。' },
+                            { id: 'app-in',     name: '应用层',         label: '$100',   col: 1, type: 'main',   color: '#1a3a5c',
+                              desc: '应用层接收用户全部支付。这一层包括 Cursor、Harvey、Salesforce + AI、ChatGPT 等。它把"AI 能力"包装成"产品体验"，按订阅或订单收费。' },
+                            { id: 'model-in',   name: '模型层',         label: '$75',    col: 2, type: 'main',   color: '#5a7a9c',
+                              desc: '应用层向模型层支付的成本（API 调用、模型授权）。这一层只剩 OpenAI / Anthropic / Google / DeepSeek / Llama 等模型公司。' },
+                            { id: 'compute-in', name: '计算层',         label: '$25',    col: 3, type: 'main',   color: '#7a9cb8',
+                              desc: '模型层向计算层支付的成本（GPU、云算力、HBM、数据中心配套）。NVIDIA、TSMC、HBM 三家、AWS/Azure/GCP、Vertiv、伊顿都在这里分钱。' },
+                            { id: 'energy-in',  name: '能源层',         label: '$3',     col: 4, type: 'main',   color: '#a8a8a8',
+                              desc: '计算层向能源层支付的成本（电费、设备、并网）。整个 AI 产业链最不被人看见、却养活了上面所有人。' },
+
+                            // Profit branch nodes (bottom row, pull from each "main" node)
+                            { id: 'app-profit',     name: '应用层抽走',  label: '$25',  col: 1, type: 'profit', color: '#d4a574',
+                              desc: '应用层留下的利润 —— 产品体验、用户工作流、订阅关系。\n\n代表赢家：Cursor、Harvey、Salesforce + Einstein、ChatGPT 自营订阅。\n\n核心逻辑：定价锚定的是"用户替代的人力小时费"，不是软件许可费。律师 $500/h、程序员 $100/h —— 这是应用层利润空间的来源。' },
+                            { id: 'model-profit',   name: '模型层抽走',  label: '$50',  col: 2, type: 'profit', color: '#e8743b',
+                              desc: '模型层留下的利润 —— 主要被 3 家顶级闭源吃掉。\n\n代表赢家：OpenAI（GPT）、Anthropic（Claude）、Google（Gemini）。\n\n核心逻辑：溢价 = 与最强开源的能力差距 × 这个差距能维持多久。开源（DeepSeek、Llama、Qwen）正在压缩这个窗口。\n\n中国独立模型公司：上游被国资算力压价、下游被互联网大厂截流，几乎不存在。' },
+                            { id: 'compute-profit', name: '计算层抽走',  label: '$22',  col: 3, type: 'profit', color: '#1a3a5c',
+                              desc: 'NVIDIA 一家就拿走计算层 6 成以上 —— 数据中心业务毛利 75%。\n\n其他参与者：HBM 三家（海力士/三星/美光）、TSMC、数据中心配套（伊顿/Vertiv/中际旭创）、AWS/Azure 把 GPU 打包零售的"二房东"利润。\n\n服务器组装厂（工业富联/超微）虽然营收暴涨，毛利只有 10% 左右 —— 是 NVIDIA 利润的"传导管道"，不是沉淀地。' },
+                            { id: 'energy-profit',  name: '能源层抽走',  label: '$3',   col: 4, type: 'profit', color: '#a8a8a8',
+                              desc: '能源层是被管制锁死的"基础设施层"。\n\n发电企业（长江电力、Constellation）毛利率被各国 PUC / 发改委锁在 9-11%，是"类债券资产"，不是 AI 增长股。\n\n真正吃到 AI 红利的是"卖铲子的"：GE Vernova（燃气轮机）、Westinghouse（核电）、伊顿/西门子能源（输配电设备）—— 闷声发财。' }
+                        ];
+
+                        // Links: main flow + profit branches at each layer
+                        // Main flow values represent the cost passed upstream (becoming smaller)
+                        var links = [
+                            // Main flow (left to right, costs being passed upstream)
+                            { source: 'user',       target: 'app-in',     value: 100, type: 'main' },
+                            { source: 'app-in',     target: 'model-in',   value: 75,  type: 'main' },
+                            { source: 'model-in',   target: 'compute-in', value: 25,  type: 'main' },
+                            { source: 'compute-in', target: 'energy-in',  value: 3,   type: 'main' },
+                            // Profit branches (each "in" node bleeds profit downward)
+                            { source: 'app-in',     target: 'app-profit',     value: 25, type: 'profit' },
+                            { source: 'model-in',   target: 'model-profit',   value: 50, type: 'profit' },
+                            { source: 'compute-in', target: 'compute-profit', value: 22, type: 'profit' },
+                            { source: 'energy-in',  target: 'energy-profit',  value: 3,  type: 'profit' }
                         ];
 
                         // ===== Layout =====
-                        var W = 960, H = 440;
-                        var margin = { top: 24, right: 100, bottom: 60, left: 64 };
-                        var innerW = W - margin.left - margin.right;
-                        var innerH = H - margin.top - margin.bottom;
+                        var W = 960, H = 480;
+                        var sankey = d3.sankey()
+                            .nodeId(function (d) { return d.id; })
+                            .nodeWidth(16)
+                            .nodePadding(20)
+                            .nodeAlign(d3.sankeyJustify)
+                            .extent([[100, 30], [880, 410]]);
 
+                        // Build graph
+                        var graph = sankey({
+                            nodes: nodes.map(function (n) { return Object.assign({}, n); }),
+                            links: links.map(function (l) { return Object.assign({}, l); })
+                        });
+
+                        // Force "profit" nodes to be visually below "main" nodes by overriding y
+                        // d3-sankey already separates them by available space, but we want main row aligned at top
+                        var mainNodes = graph.nodes.filter(function (n) { return n.type === 'main'; });
+                        var profitNodes = graph.nodes.filter(function (n) { return n.type === 'profit'; });
+                        // Find baseline y for main row (use min y0 of main nodes - typically user node)
+                        var mainY = 50;
+                        mainNodes.forEach(function (n) {
+                            var h = n.y1 - n.y0;
+                            n.y0 = mainY;
+                            n.y1 = mainY + h;
+                        });
+                        // Place profit nodes below main row at fixed y
+                        var profitY = 280;
+                        profitNodes.forEach(function (n) {
+                            var h = n.y1 - n.y0;
+                            n.y0 = profitY;
+                            n.y1 = profitY + h;
+                        });
+                        // Recompute links with updated node positions
+                        sankey.update(graph);
+
+                        // ===== Render =====
                         var svg = d3.select(root).select('svg');
                         svg.selectAll('*').remove();
-                        var g = svg.append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
-                        // X scale: 4 categories
-                        var x = d3.scaleBand()
-                            .domain(layers.map(function (d) { return d.id; }))
-                            .range([0, innerW])
-                            .padding(0.32);
+                        // ===== Direction arrow at top =====
+                        var dirG = svg.append('g').attr('class', 'money-flow__direction');
+                        dirG.append('text')
+                            .attr('class', 'money-flow__direction-arrow')
+                            .attr('x', W / 2)
+                            .attr('y', 18)
+                            .text('成本流向 →    （主流越往右越细：钱被一层层抽走）');
 
-                        // Y scale: log scale (covers 0.04 to 25)
-                        var y = d3.scaleLog()
-                            .domain([0.04, 25])
-                            .range([innerH, 0])
-                            .clamp(true);
+                        // ===== Links =====
+                        var linkG = svg.append('g').attr('class', 'money-flow__links').attr('fill', 'none');
+                        var linkSel = linkG.selectAll('path')
+                            .data(graph.links)
+                            .enter().append('path')
+                            .attr('class', 'money-flow__link')
+                            .attr('d', d3.sankeyLinkHorizontal())
+                            .attr('stroke', function (d) {
+                                if (d.type === 'main') return '#5a7a9c';
+                                return d.target.color;
+                            })
+                            .attr('stroke-opacity', function (d) { return d.type === 'main' ? 0.32 : 0.4; })
+                            .attr('stroke-width', function (d) { return Math.max(1, d.width); });
 
-                        // ===== Y axis (log) =====
-                        var yAxis = d3.axisLeft(y)
-                            .tickValues([0.05, 0.1, 0.5, 1, 5, 10, 20])
-                            .tickFormat(function (d) { return '$' + d; })
-                            .tickSize(-innerW);
-                        g.append('g')
-                            .attr('class', 'value-stack__axis')
-                            .call(yAxis)
-                            .call(function (sel) {
-                                sel.selectAll('line').attr('stroke-dasharray', '2,3').attr('opacity', 0.5);
-                                sel.select('path').remove();
-                            });
+                        // ===== Nodes =====
+                        var nodeG = svg.append('g').attr('class', 'money-flow__nodes');
+                        var nodeSel = nodeG.selectAll('g')
+                            .data(graph.nodes)
+                            .enter().append('g')
+                            .attr('class', 'money-flow__node')
+                            .attr('data-id', function (d) { return d.id; });
 
-                        // ===== Bars =====
-                        // Each bar: full bar from y(price) to y(0.04), but split into:
-                        //   - upstream segments (recursive: shows the inheritance from previous layers)
-                        //   - this layer's delta on top (highlighted)
-                        var barG = g.append('g').attr('class', 'value-stack__bars');
+                        nodeSel.append('rect')
+                            .attr('x', function (d) { return d.x0; })
+                            .attr('y', function (d) { return d.y0; })
+                            .attr('width', function (d) { return d.x1 - d.x0; })
+                            .attr('height', function (d) { return Math.max(2, d.y1 - d.y0); })
+                            .attr('fill', function (d) { return d.color; })
+                            .attr('rx', 2);
 
-                        layers.forEach(function (layer, li) {
-                            var barX = x(layer.id);
-                            var barW = x.bandwidth();
-                            // For each layer, render a stack of all upstream layers + this layer's delta on top
-                            var stackBottom = 0.04; // y axis floor
-                            // Upstream layers stacked first (in their original colors but lower opacity)
-                            for (var ui = 0; ui < li; ui++) {
-                                var upLayer = layers[ui];
-                                // Each upstream layer contributes its delta
-                                var segBottom = ui === 0 ? stackBottom : layers[ui - 1].price;
-                                var segTop = upLayer.price;
-                                barG.append('rect')
-                                    .attr('class', 'value-stack__seg value-stack__seg--upstream')
-                                    .attr('data-layer', layer.id)
-                                    .attr('data-source', upLayer.id)
-                                    .attr('x', barX)
-                                    .attr('y', y(segTop))
-                                    .attr('width', barW)
-                                    .attr('height', y(segBottom) - y(segTop))
-                                    .attr('fill', upLayer.color)
-                                    .attr('opacity', 0.42)
-                                    .attr('stroke', '#fff')
-                                    .attr('stroke-width', 0.5);
-                            }
-                            // This layer's delta on top
-                            var deltaBottom = li === 0 ? stackBottom : layers[li - 1].price;
-                            var deltaTop = layer.price;
-                            barG.append('rect')
-                                .attr('class', 'value-stack__seg value-stack__seg--current')
-                                .attr('data-layer', layer.id)
-                                .attr('data-source', layer.id)
-                                .attr('x', barX)
-                                .attr('y', y(deltaTop))
-                                .attr('width', barW)
-                                .attr('height', y(deltaBottom) - y(deltaTop))
-                                .attr('fill', layer.color)
-                                .attr('stroke', '#fff')
-                                .attr('stroke-width', 0.5);
+                        // Node names: main row labels above the bar; profit row labels below
+                        nodeSel.append('text')
+                            .attr('class', 'money-flow__node-name')
+                            .attr('x', function (d) { return (d.x0 + d.x1) / 2; })
+                            .attr('y', function (d) { return d.type === 'main' ? d.y0 - 18 : d.y1 + 16; })
+                            .attr('text-anchor', 'middle')
+                            .text(function (d) { return d.name; });
 
-                            // Delta amount label centered in the highlighted segment
-                            var deltaH = y(deltaBottom) - y(deltaTop);
-                            if (deltaH > 22) {
-                                var deltaCY = (y(deltaBottom) + y(deltaTop)) / 2;
-                                var deltaText = li === 0 ? ('$' + layer.delta) : ('+ $' + layer.delta);
-                                barG.append('text')
-                                    .attr('class', 'value-stack__delta')
-                                    .attr('x', barX + barW / 2)
-                                    .attr('y', deltaCY + 4)
-                                    .text(deltaText);
-                                if (deltaH > 50) {
-                                    barG.append('text')
-                                        .attr('class', 'value-stack__delta-label')
-                                        .attr('x', barX + barW / 2)
-                                        .attr('y', deltaCY - 8)
-                                        .text(layer.multiplier);
-                                }
-                            }
-                        });
-
-                        // ===== Column labels (bottom) =====
-                        var labelG = g.append('g').attr('class', 'value-stack__col-labels');
-                        layers.forEach(function (layer) {
-                            var cx = x(layer.id) + x.bandwidth() / 2;
-                            labelG.append('text')
-                                .attr('class', 'value-stack__col-label')
-                                .attr('x', cx)
-                                .attr('y', innerH + 24)
-                                .text(layer.name);
-                            labelG.append('text')
-                                .attr('class', 'value-stack__col-price')
-                                .attr('x', cx)
-                                .attr('y', innerH + 42)
-                                .text('累计 $' + layer.price);
-                        });
-
-                        // ===== Right-side annotation: final price callout =====
-                        var lastLayer = layers[layers.length - 1];
-                        var lastBarX = x(lastLayer.id) + x.bandwidth();
-                        var calloutY = y(lastLayer.price);
-                        var annotation = g.append('g').attr('class', 'value-stack__annotation');
-                        annotation.append('line')
-                            .attr('x1', lastBarX)
-                            .attr('x2', lastBarX + 28)
-                            .attr('y1', calloutY)
-                            .attr('y2', calloutY)
-                            .attr('stroke', '#1a3a5c')
-                            .attr('stroke-width', 1);
-                        annotation.append('text')
-                            .attr('x', lastBarX + 32)
-                            .attr('y', calloutY - 4)
-                            .attr('font-size', 12)
-                            .attr('font-weight', 600)
-                            .attr('fill', '#1a3a5c')
-                            .text('终端价 $20');
-                        annotation.append('text')
-                            .attr('x', lastBarX + 32)
-                            .attr('y', calloutY + 11)
-                            .attr('font-size', 10)
-                            .attr('fill', '#888780')
-                            .text('用户支付意愿');
+                        nodeSel.append('text')
+                            .attr('class', 'money-flow__node-amount')
+                            .attr('x', function (d) { return (d.x0 + d.x1) / 2; })
+                            .attr('y', function (d) { return d.type === 'main' ? d.y0 - 4 : d.y1 + 30; })
+                            .attr('text-anchor', 'middle')
+                            .attr('fill', function (d) { return d.type === 'profit' ? d.color : '#1a3a5c'; })
+                            .text(function (d) { return d.label; });
 
                         // ===== Interaction =====
-                        var allSegs = g.selectAll('.value-stack__seg');
-                        function activate(layerId, evt) {
+                        function activateNode(node, evt) {
                             root.classList.add('is-focused');
-                            var layer = layers.find(function (l) { return l.id === layerId; });
-                            allSegs.classed('is-active', function () {
-                                return this.getAttribute('data-source') === layerId;
+                            var relatedLinks = graph.links.filter(function (l) {
+                                return l.source.id === node.id || l.target.id === node.id;
+                            });
+                            var relatedNodeIds = new Set([node.id]);
+                            relatedLinks.forEach(function (l) {
+                                relatedNodeIds.add(l.source.id); relatedNodeIds.add(l.target.id);
+                            });
+                            linkSel.classed('is-related', function (l) {
+                                return l.source.id === node.id || l.target.id === node.id;
+                            });
+                            nodeSel.selectAll('rect, text').classed('is-related', function () {
+                                return relatedNodeIds.has(this.parentNode.getAttribute('data-id'));
                             });
                             tooltip.html(
-                                '<div class="value-stack__tooltip-name">' + layer.name + '层</div>' +
-                                '<div class="value-stack__tooltip-prices">' +
-                                  '上层成本: $' + layer.upstream + '  →  累计: <strong>$' + layer.price + '</strong>' +
-                                  '<br>本层加价: <strong>' + (layer.id === 'energy' ? '$' + layer.delta + '（基底）' : '+ $' + layer.delta + '（' + layer.multiplier + '）') + '</strong>' +
-                                '</div>' +
-                                '<div class="value-stack__tooltip-role">' + layer.role + '</div>' +
-                                '<div class="value-stack__tooltip-cos">' + layer.cos + '</div>'
+                                '<div class="money-flow__tooltip-name">' + node.name + '</div>' +
+                                '<div class="money-flow__tooltip-amount">' + node.label + '</div>' +
+                                '<div class="money-flow__tooltip-desc">' + (node.desc || '').replace(/\n/g, '<br>') + '</div>'
+                            ).classed('is-visible', true);
+                            positionTooltip(evt);
+                        }
+                        function activateLink(link, evt) {
+                            root.classList.add('is-focused');
+                            linkSel.classed('is-related', function (l) { return l === link; });
+                            var ids = new Set([link.source.id, link.target.id]);
+                            nodeSel.selectAll('rect, text').classed('is-related', function () {
+                                return ids.has(this.parentNode.getAttribute('data-id'));
+                            });
+                            var direction = link.type === 'main'
+                                ? '$' + link.value + ' 从 ' + link.source.name + ' 流向 ' + link.target.name + '（作为成本支付给上游）'
+                                : '$' + link.value + ' 留在 ' + link.source.name + ' 作为利润';
+                            tooltip.html(
+                                '<div class="money-flow__tooltip-name">资金流</div>' +
+                                '<div class="money-flow__tooltip-amount">$' + link.value + '</div>' +
+                                '<div class="money-flow__tooltip-desc">' + direction + '</div>'
                             ).classed('is-visible', true);
                             positionTooltip(evt);
                         }
                         function deactivate() {
                             root.classList.remove('is-focused');
-                            allSegs.classed('is-active', false);
+                            linkSel.classed('is-related', false);
+                            nodeSel.selectAll('rect, text').classed('is-related', false);
                             tooltip.classed('is-visible', false);
                         }
                         function positionTooltip(evt) {
@@ -372,34 +341,39 @@
                             var x = evt.clientX - rect.left + 14;
                             var y = evt.clientY - rect.top + 14;
                             var node = tooltip.node();
-                            var tipW = node ? node.offsetWidth : 260;
+                            var tipW = node ? node.offsetWidth : 280;
                             if (x + tipW > rect.width - 10) x = evt.clientX - rect.left - tipW - 14;
                             tooltip.style('left', x + 'px').style('top', y + 'px');
                         }
-                        allSegs
-                            .on('mouseenter', function (event) {
-                                activate(this.getAttribute('data-source'), event);
-                            })
-                            .on('mousemove', function (event) { positionTooltip(event); })
-                            .on('mouseleave', deactivate);
+                        nodeSel.on('mouseenter', function (event, d) { activateNode(d, event); })
+                               .on('mousemove', function (event) { positionTooltip(event); })
+                               .on('mouseleave', deactivate)
+                               .on('click', function (event, d) { activateNode(d, event); });
+                        linkSel.on('mouseenter', function (event, d) { activateLink(d, event); })
+                               .on('mousemove', function (event) { positionTooltip(event); })
+                               .on('mouseleave', deactivate);
 
-                        // ===== Entry animation: bars grow from bottom =====
-                        allSegs
-                            .style('transform', 'scaleY(0)')
-                            .style('transform-origin', 'center bottom')
-                            .style('transform-box', 'fill-box');
-
+                        // ===== Entry animation =====
+                        nodeSel.style('opacity', 0);
+                        linkSel.style('opacity', 0);
                         function playIntro() {
-                            layers.forEach(function (layer, li) {
-                                allSegs.filter(function () { return this.getAttribute('data-layer') === layer.id; })
-                                    .transition()
-                                    .delay(li * 220)
-                                    .duration(700)
-                                    .ease(d3.easeCubicOut)
-                                    .style('transform', 'scaleY(1)');
-                            });
+                            // Main row appears first (left to right)
+                            for (var c = 0; c < 5; c++) {
+                                (function (col) {
+                                    nodeSel.filter(function (d) { return d.col === col && d.type === 'main'; })
+                                        .transition().delay(col * 160).duration(450).style('opacity', 1);
+                                    if (col > 0) {
+                                        linkSel.filter(function (d) { return d.target.col === col && d.type === 'main'; })
+                                            .transition().delay(col * 160 - 60).duration(550).style('opacity', 1);
+                                    }
+                                })(c);
+                            }
+                            // Profit nodes appear after main row, staggered
+                            nodeSel.filter(function (d) { return d.type === 'profit'; })
+                                .transition().delay(900).duration(500).style('opacity', 1);
+                            linkSel.filter(function (d) { return d.type === 'profit'; })
+                                .transition().delay(900).duration(500).style('opacity', 1);
                         }
-
                         if ('IntersectionObserver' in window) {
                             var io = new IntersectionObserver(function (entries) {
                                 entries.forEach(function (entry) {
