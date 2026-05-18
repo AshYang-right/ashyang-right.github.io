@@ -165,69 +165,72 @@
                 <!-- ==================== Interactive Profit Donut Component ==================== -->
                 <style>
                     .profit-donut {
-                        margin: 36px 0;
-                        padding: 28px 24px 20px;
-                        background: #faf7ef;
-                        border: 1px solid #e8e4d8;
-                        border-radius: 8px;
+                        margin: 32px 0;
                         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
                     }
                     .profit-donut__header { text-align: center; margin-bottom: 18px; }
                     .profit-donut__title { font-size: 15px; font-weight: 600; color: #1a3a5c; letter-spacing: 0.3px; }
                     .profit-donut__subtitle { font-size: 11px; color: #888780; margin-top: 4px; }
-                    .profit-donut__toggle {
-                        display: inline-flex; gap: 0; margin-top: 14px;
-                        border: 1px solid #d4d0c0; border-radius: 6px; overflow: hidden;
+                    .profit-donut__check {
+                        display: inline-flex; align-items: center; gap: 8px;
+                        margin-top: 14px; padding: 6px 14px;
+                        font-size: 12.5px; color: #5f5e5a; cursor: pointer;
+                        border-radius: 6px; user-select: none;
+                        transition: background 0.15s, color 0.15s;
                     }
-                    .profit-donut__toggle button {
-                        background: transparent; border: 0; padding: 6px 14px;
-                        font-size: 12px; color: #5f5e5a; cursor: pointer;
-                        font-family: inherit; transition: background 0.15s;
+                    .profit-donut__check:hover { background: rgba(26, 58, 92, 0.06); color: #1a3a5c; }
+                    .profit-donut__check input { display: none; }
+                    .profit-donut__check-box {
+                        width: 14px; height: 14px; border: 1.5px solid #888780; border-radius: 3px;
+                        display: inline-flex; align-items: center; justify-content: center;
+                        transition: background 0.15s, border-color 0.15s;
+                        flex-shrink: 0;
                     }
-                    .profit-donut__toggle button + button { border-left: 1px solid #d4d0c0; }
-                    .profit-donut__toggle button:hover { background: #efeadc; }
-                    .profit-donut__toggle button.is-active { background: #1a3a5c; color: #fff; }
+                    .profit-donut__check-box::after {
+                        content: ''; width: 6px; height: 9px;
+                        border: solid #fff; border-width: 0 1.8px 1.8px 0;
+                        transform: rotate(45deg) scale(0); transform-origin: center;
+                        transition: transform 0.15s; margin-bottom: 2px;
+                    }
+                    .profit-donut__check input:checked + .profit-donut__check-box {
+                        background: #1a3a5c; border-color: #1a3a5c;
+                    }
+                    .profit-donut__check input:checked + .profit-donut__check-box::after { transform: rotate(45deg) scale(1); }
                     .profit-donut__charts {
                         display: flex; align-items: flex-start; justify-content: center;
-                        gap: 30px; flex-wrap: wrap;
+                        gap: 30px; flex-wrap: wrap; position: relative;
                     }
-                    .profit-donut__chart { flex: 0 1 360px; min-width: 280px; position: relative; }
+                    .profit-donut__chart { flex: 0 1 420px; min-width: 320px; position: relative; }
                     .profit-donut__chart-title { text-align: center; font-size: 13px; font-weight: 600; color: #1a3a5c; margin-bottom: 2px; }
                     .profit-donut__chart-sub { text-align: center; font-size: 10px; color: #888780; margin-bottom: 8px; }
-                    .profit-donut__chart svg { display: block; width: 100%; height: auto; }
+                    .profit-donut__chart svg { display: block; width: 100%; height: auto; overflow: visible; }
                     .profit-donut__seg {
                         cursor: pointer;
-                        transition: opacity 0.18s, transform 0.18s;
-                        transform-origin: center;
+                        transition: opacity 0.18s;
                     }
                     .profit-donut__chart.is-dimmed .profit-donut__seg { opacity: 0.28; }
                     .profit-donut__chart .profit-donut__seg.is-active {
                         opacity: 1;
                         filter: drop-shadow(0 2px 6px rgba(26, 58, 92, 0.25));
                     }
+                    .profit-donut__leader {
+                        stroke: #888780; stroke-width: 0.7; fill: none;
+                        transition: stroke 0.15s, stroke-width 0.15s;
+                    }
+                    .profit-donut__chart.is-dimmed .profit-donut__leader { opacity: 0.3; }
+                    .profit-donut__leader.is-active { stroke: #1a3a5c; stroke-width: 1.2; opacity: 1 !important; }
+                    .profit-donut__label-name { font-size: 11px; font-weight: 600; fill: #1a3a5c; transition: opacity 0.15s; }
+                    .profit-donut__label-pct { font-size: 12px; font-weight: 700; fill: #1a3a5c; transition: opacity 0.15s; }
+                    .profit-donut__chart.is-dimmed .profit-donut__label-name,
+                    .profit-donut__chart.is-dimmed .profit-donut__label-pct { opacity: 0.4; }
+                    .profit-donut__chart .is-active.profit-donut__label-name,
+                    .profit-donut__chart .is-active.profit-donut__label-pct { opacity: 1; fill: #1a3a5c; }
                     .profit-donut__center-pct {
                         font-size: 24px; font-weight: 700; fill: #1a3a5c;
-                        transition: opacity 0.18s;
                     }
                     .profit-donut__center-label { font-size: 10px; fill: #888780; }
-                    .profit-donut__legend {
-                        margin-top: 14px;
-                        display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px;
-                    }
-                    .profit-donut__legend-row {
-                        display: flex; align-items: center; gap: 8px;
-                        padding: 5px 8px; border-radius: 4px;
-                        cursor: pointer; transition: background 0.15s;
-                        font-size: 12px; color: #444441;
-                    }
-                    .profit-donut__legend-row:hover, .profit-donut__legend-row.is-active { background: #efeadc; }
-                    .profit-donut__legend-dot {
-                        width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
-                    }
-                    .profit-donut__legend-name { flex: 1; }
-                    .profit-donut__legend-pct { font-weight: 600; color: #1a3a5c; min-width: 32px; text-align: right; }
-                    .profit-donut__compare { transition: opacity 0.3s, max-width 0.3s; }
-                    .profit-donut.compare-off .profit-donut__compare { display: none; }
+                    .profit-donut__compare { display: none; }
+                    .profit-donut.compare-on .profit-donut__compare { display: block; }
                     .profit-donut__tooltip {
                         position: absolute; pointer-events: none;
                         background: #1a3a5c; color: #fff;
@@ -243,28 +246,28 @@
                     .profit-donut__tooltip-role { color: #d4d0c0; font-size: 11px; margin: 4px 0 6px; font-style: italic; }
                     .profit-donut__tooltip-cos { color: #fff; font-size: 11px; opacity: 0.85; }
                     .profit-donut__bottom {
-                        text-align: center; margin-top: 18px; padding-top: 14px;
-                        border-top: 1px dashed #dcd8c8;
+                        text-align: center; margin-top: 22px;
                         font-size: 13px; font-weight: 600; color: #1a3a5c;
                     }
                     .profit-donut__caption {
                         text-align: center; font-size: 12px; color: #888780;
-                        margin-top: 10px; font-style: italic;
+                        margin-top: 8px; font-style: italic;
                     }
                     @media (max-width: 600px) {
-                        .profit-donut__legend { grid-template-columns: 1fr; }
                         .profit-donut__charts { gap: 20px; }
+                        .profit-donut__chart { min-width: 280px; }
                     }
                 </style>
 
                 <figure class="profit-donut" id="profit-donut">
                     <div class="profit-donut__header">
-                        <div class="profit-donut__title">两个产业，同一个利润分布逻辑</div>
-                        <div class="profit-donut__subtitle">数字为粗略估算，用于结构对比 · 鼠标悬停或点击查看详情</div>
-                        <div class="profit-donut__toggle" role="tablist">
-                            <button type="button" data-mode="compare" class="is-active">对比房地产</button>
-                            <button type="button" data-mode="single">只看计算层</button>
-                        </div>
+                        <div class="profit-donut__title">计算层利润分布</div>
+                        <div class="profit-donut__subtitle">数字为粗略估算 · 鼠标悬停或点击查看详情</div>
+                        <label class="profit-donut__check">
+                            <input type="checkbox" id="profit-donut-compare-toggle">
+                            <span class="profit-donut__check-box"></span>
+                            <span>显示与房地产对比</span>
+                        </label>
                     </div>
 
                     <div class="profit-donut__charts">
@@ -272,31 +275,33 @@
                         <div class="profit-donut__chart" data-chart="compute">
                             <div class="profit-donut__chart-title">计算层利润分布</div>
                             <div class="profit-donut__chart-sub">2026 估算 · 100% 利润池</div>
-                            <svg viewBox="-160 -150 320 320" xmlns="http://www.w3.org/2000/svg" aria-label="计算层利润分布环形图">
+                            <svg viewBox="-210 -180 420 380" xmlns="http://www.w3.org/2000/svg" aria-label="计算层利润分布环形图">
+                                <g class="profit-donut__leaders"></g>
                                 <g class="profit-donut__segs"></g>
+                                <g class="profit-donut__labels"></g>
                                 <text class="profit-donut__center-pct" x="0" y="-2" text-anchor="middle">100%</text>
                                 <text class="profit-donut__center-label" x="0" y="14" text-anchor="middle">利润池</text>
                             </svg>
-                            <div class="profit-donut__legend" data-legend="compute"></div>
                         </div>
 
                         <!-- ===== Real Estate (compare) ===== -->
                         <div class="profit-donut__chart profit-donut__compare" data-chart="realestate">
-                            <div class="profit-donut__chart-title">房地产利润分布</div>
-                            <div class="profit-donut__chart-sub">中国市场结构 · 参照</div>
-                            <svg viewBox="-130 -125 260 260" xmlns="http://www.w3.org/2000/svg" aria-label="房地产利润分布环形图">
+                            <div class="profit-donut__chart-title">房地产利润分布（参照）</div>
+                            <div class="profit-donut__chart-sub">中国市场结构</div>
+                            <svg viewBox="-180 -150 360 320" xmlns="http://www.w3.org/2000/svg" aria-label="房地产利润分布环形图">
+                                <g class="profit-donut__leaders"></g>
                                 <g class="profit-donut__segs"></g>
+                                <g class="profit-donut__labels"></g>
                                 <text class="profit-donut__center-pct" x="0" y="-2" text-anchor="middle" style="font-size:20px;">100%</text>
                                 <text class="profit-donut__center-label" x="0" y="13" text-anchor="middle">利润池</text>
                             </svg>
-                            <div class="profit-donut__legend" data-legend="realestate"></div>
                         </div>
 
                         <div class="profit-donut__tooltip" id="profit-donut-tooltip"></div>
                     </div>
 
                     <div class="profit-donut__bottom">两个产业的"卖地者"都在拿走最大那块蛋糕</div>
-                    <figcaption class="profit-donut__caption">计算层（主）与房地产行业（参照对比）的利润分布。两图结构同构——上游垄断方独占过半，中游组装/中介只能分小份。</figcaption>
+                    <figcaption class="profit-donut__caption">勾选上方选项可叠加房地产作为结构参照——上游垄断方独占过半，中游组装/中介只能分小份。</figcaption>
                 </figure>
 
                 <script>
@@ -318,70 +323,100 @@
                         { name: '中介', role: '套利型生意', companies: '链家 · 贝壳等', pct: 5, color: '#c8c5bc' }
                     ];
 
-                    function buildDonut(data, rOuter, rInner) {
+                    function buildDonut(data, rOuter, rInner, labelGap) {
                         var cum = 0;
                         return data.map(function (item, i) {
                             var startA = (-90 + cum * 3.6) * Math.PI / 180;
                             var endA   = (-90 + (cum + item.pct) * 3.6) * Math.PI / 180;
+                            var midA   = (-90 + (cum + item.pct / 2) * 3.6) * Math.PI / 180;
                             var large  = item.pct > 50 ? 1 : 0;
                             var x1o = rOuter * Math.cos(startA), y1o = rOuter * Math.sin(startA);
                             var x2o = rOuter * Math.cos(endA),   y2o = rOuter * Math.sin(endA);
                             var x1i = rInner * Math.cos(startA), y1i = rInner * Math.sin(startA);
                             var x2i = rInner * Math.cos(endA),   y2i = rInner * Math.sin(endA);
+                            // Leader anchor on outer arc
+                            var lax = rOuter * Math.cos(midA), lay = rOuter * Math.sin(midA);
+                            // Bend point (just outside outer ring)
+                            var lbx = (rOuter + 12) * Math.cos(midA), lby = (rOuter + 12) * Math.sin(midA);
+                            // Far end of horizontal leader (push out to side)
+                            var side = Math.cos(midA) >= 0 ? 1 : -1;
+                            var lex = side * (rOuter + labelGap);
+                            var ley = lby;
                             var d = 'M ' + x1o.toFixed(2) + ',' + y1o.toFixed(2)
                                   + ' A ' + rOuter + ',' + rOuter + ' 0 ' + large + ',1 ' + x2o.toFixed(2) + ',' + y2o.toFixed(2)
                                   + ' L ' + x2i.toFixed(2) + ',' + y2i.toFixed(2)
                                   + ' A ' + rInner + ',' + rInner + ' 0 ' + large + ',0 ' + x1i.toFixed(2) + ',' + y1i.toFixed(2)
                                   + ' Z';
                             cum += item.pct;
-                            return { d: d, item: item, idx: i };
+                            return {
+                                d: d, item: item, idx: i,
+                                leaderD: 'M ' + lax.toFixed(2) + ',' + lay.toFixed(2)
+                                       + ' L ' + lbx.toFixed(2) + ',' + lby.toFixed(2)
+                                       + ' L ' + lex.toFixed(2) + ',' + ley.toFixed(2),
+                                labelX: lex + side * 4,
+                                labelY: ley,
+                                labelAnchor: side === 1 ? 'start' : 'end'
+                            };
                         });
                     }
 
                     var root = document.getElementById('profit-donut');
                     if (!root) return;
                     var tooltip = document.getElementById('profit-donut-tooltip');
+                    var SVGNS = 'http://www.w3.org/2000/svg';
 
-                    function renderChart(chartEl, data, rOuter, rInner) {
-                        var svg = chartEl.querySelector('svg');
+                    function renderChart(chartEl, data, rOuter, rInner, labelGap) {
                         var segGroup = chartEl.querySelector('.profit-donut__segs');
-                        var legend = chartEl.querySelector('.profit-donut__legend');
-                        var paths = buildDonut(data, rOuter, rInner);
+                        var leaderGroup = chartEl.querySelector('.profit-donut__leaders');
+                        var labelGroup = chartEl.querySelector('.profit-donut__labels');
+                        var paths = buildDonut(data, rOuter, rInner, labelGap);
 
-                        // Render segments
                         paths.forEach(function (p) {
-                            var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            // Segment path
+                            var path = document.createElementNS(SVGNS, 'path');
                             path.setAttribute('d', p.d);
                             path.setAttribute('fill', p.item.color);
                             path.setAttribute('class', 'profit-donut__seg');
                             path.setAttribute('data-idx', p.idx);
                             segGroup.appendChild(path);
-                        });
 
-                        // Render legend
-                        data.forEach(function (item, i) {
-                            var row = document.createElement('div');
-                            row.className = 'profit-donut__legend-row';
-                            row.setAttribute('data-idx', i);
-                            row.innerHTML =
-                                '<span class="profit-donut__legend-dot" style="background:' + item.color + '"></span>' +
-                                '<span class="profit-donut__legend-name">' + item.name + '</span>' +
-                                '<span class="profit-donut__legend-pct">' + item.pct + '%</span>';
-                            legend.appendChild(row);
+                            // Leader line
+                            var leader = document.createElementNS(SVGNS, 'path');
+                            leader.setAttribute('d', p.leaderD);
+                            leader.setAttribute('class', 'profit-donut__leader');
+                            leader.setAttribute('data-idx', p.idx);
+                            leaderGroup.appendChild(leader);
+
+                            // Label: name + pct on two stacked lines
+                            var nameText = document.createElementNS(SVGNS, 'text');
+                            nameText.setAttribute('x', p.labelX);
+                            nameText.setAttribute('y', p.labelY - 4);
+                            nameText.setAttribute('text-anchor', p.labelAnchor);
+                            nameText.setAttribute('class', 'profit-donut__label-name');
+                            nameText.setAttribute('data-idx', p.idx);
+                            nameText.textContent = p.item.name;
+                            labelGroup.appendChild(nameText);
+
+                            var pctText = document.createElementNS(SVGNS, 'text');
+                            pctText.setAttribute('x', p.labelX);
+                            pctText.setAttribute('y', p.labelY + 11);
+                            pctText.setAttribute('text-anchor', p.labelAnchor);
+                            pctText.setAttribute('class', 'profit-donut__label-pct');
+                            pctText.setAttribute('data-idx', p.idx);
+                            pctText.setAttribute('fill', p.item.color);
+                            pctText.textContent = p.item.pct + '%';
+                            labelGroup.appendChild(pctText);
                         });
 
                         function activate(idx, evt) {
                             chartEl.classList.add('is-dimmed');
-                            var segs = segGroup.querySelectorAll('.profit-donut__seg');
-                            var rows = legend.querySelectorAll('.profit-donut__legend-row');
-                            segs.forEach(function (s) { s.classList.toggle('is-active', +s.getAttribute('data-idx') === idx); });
-                            rows.forEach(function (r) { r.classList.toggle('is-active', +r.getAttribute('data-idx') === idx); });
-                            // Update center display
+                            chartEl.querySelectorAll('[data-idx]').forEach(function (el) {
+                                el.classList.toggle('is-active', +el.getAttribute('data-idx') === idx);
+                            });
                             var pct = chartEl.querySelector('.profit-donut__center-pct');
                             var lbl = chartEl.querySelector('.profit-donut__center-label');
                             pct.textContent = data[idx].pct + '%';
                             lbl.textContent = data[idx].name;
-                            // Tooltip
                             var item = data[idx];
                             tooltip.innerHTML =
                                 '<div class="profit-donut__tooltip-name">' + item.name + '</div>' +
@@ -394,12 +429,9 @@
 
                         function deactivate() {
                             chartEl.classList.remove('is-dimmed');
-                            segGroup.querySelectorAll('.profit-donut__seg').forEach(function (s) { s.classList.remove('is-active'); });
-                            legend.querySelectorAll('.profit-donut__legend-row').forEach(function (r) { r.classList.remove('is-active'); });
-                            var pct = chartEl.querySelector('.profit-donut__center-pct');
-                            var lbl = chartEl.querySelector('.profit-donut__center-label');
-                            pct.textContent = '100%';
-                            lbl.textContent = '利润池';
+                            chartEl.querySelectorAll('[data-idx]').forEach(function (el) { el.classList.remove('is-active'); });
+                            chartEl.querySelector('.profit-donut__center-pct').textContent = '100%';
+                            chartEl.querySelector('.profit-donut__center-label').textContent = '利润池';
                             tooltip.classList.remove('is-visible');
                         }
 
@@ -407,48 +439,35 @@
                             var rect = root.getBoundingClientRect();
                             var x = evt.clientX - rect.left + 14;
                             var y = evt.clientY - rect.top + 14;
-                            // Keep tooltip inside container
                             var tipW = tooltip.offsetWidth || 220;
                             if (x + tipW > rect.width - 10) x = evt.clientX - rect.left - tipW - 14;
                             tooltip.style.left = x + 'px';
                             tooltip.style.top = y + 'px';
                         }
 
-                        // Bind events on segments
-                        segGroup.querySelectorAll('.profit-donut__seg').forEach(function (s) {
-                            s.addEventListener('mouseenter', function (e) { activate(+s.getAttribute('data-idx'), e); });
-                            s.addEventListener('mousemove', positionTooltip);
-                            s.addEventListener('mouseleave', deactivate);
-                            s.addEventListener('click', function (e) { activate(+s.getAttribute('data-idx'), e); });
-                        });
-                        // Bind events on legend rows
-                        legend.querySelectorAll('.profit-donut__legend-row').forEach(function (r) {
-                            r.addEventListener('mouseenter', function (e) { activate(+r.getAttribute('data-idx'), e); });
-                            r.addEventListener('mousemove', positionTooltip);
-                            r.addEventListener('mouseleave', deactivate);
+                        // Hover bindings on segments and label texts (clickable everywhere)
+                        chartEl.querySelectorAll('.profit-donut__seg, .profit-donut__label-name, .profit-donut__label-pct').forEach(function (el) {
+                            el.style.cursor = 'pointer';
+                            el.addEventListener('mouseenter', function (e) { activate(+el.getAttribute('data-idx'), e); });
+                            el.addEventListener('mousemove', positionTooltip);
+                            el.addEventListener('mouseleave', deactivate);
+                            el.addEventListener('click', function (e) { activate(+el.getAttribute('data-idx'), e); });
                         });
                     }
 
                     var computeChart = root.querySelector('[data-chart="compute"]');
                     var realChart = root.querySelector('[data-chart="realestate"]');
-                    renderChart(computeChart, COMPUTE, 110, 68);
-                    renderChart(realChart, REALESTATE, 90, 56);
+                    renderChart(computeChart, COMPUTE, 110, 68, 92);
+                    renderChart(realChart, REALESTATE, 90, 56, 78);
 
-                    // Toggle compare/single
-                    var toggleBtns = root.querySelectorAll('.profit-donut__toggle button');
-                    toggleBtns.forEach(function (btn) {
-                        btn.addEventListener('click', function () {
-                            toggleBtns.forEach(function (b) { b.classList.remove('is-active'); });
-                            btn.classList.add('is-active');
-                            if (btn.getAttribute('data-mode') === 'single') {
-                                root.classList.add('compare-off');
-                            } else {
-                                root.classList.remove('compare-off');
-                            }
-                        });
+                    // Compare toggle (checkbox)
+                    var checkbox = document.getElementById('profit-donut-compare-toggle');
+                    checkbox.addEventListener('change', function () {
+                        root.classList.toggle('compare-on', checkbox.checked);
                     });
                 })();
                 </script>
+
 
                 <p>这个类比最妙的地方：<strong>它一眼让人看懂为什么计算层整体暴涨，但只有"卖地的"和"卖钢筋水泥的"能赚到超额利润，其他人都是给 NVIDIA 打工。</strong></p>
 
