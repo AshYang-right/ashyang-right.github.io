@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,600&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/d3@7" defer></script>
 </head>
 <body>
     <header class="site-header">
@@ -162,7 +163,7 @@
 
                 <p>这一层是当前 AI 产业链利润沉淀最多的一层。我想用一个类比来讲它：<strong>计算层就是"中国特色房地产行业"。</strong></p>
 
-                <!-- ==================== Interactive Profit Donut Component ==================== -->
+                <!-- ==================== Interactive Profit Donut (D3) ==================== -->
                 <style>
                     .profit-donut {
                         margin: 32px 0;
@@ -200,34 +201,20 @@
                         display: flex; align-items: flex-start; justify-content: center;
                         gap: 30px; flex-wrap: wrap; position: relative;
                     }
-                    .profit-donut__chart { flex: 0 1 420px; min-width: 320px; position: relative; }
+                    .profit-donut__chart { flex: 0 1 440px; min-width: 320px; position: relative; }
                     .profit-donut__chart-title { text-align: center; font-size: 13px; font-weight: 600; color: #1a3a5c; margin-bottom: 2px; }
                     .profit-donut__chart-sub { text-align: center; font-size: 10px; color: #888780; margin-bottom: 8px; }
                     .profit-donut__chart svg { display: block; width: 100%; height: auto; overflow: visible; }
-                    .profit-donut__seg {
-                        cursor: pointer;
-                        transition: opacity 0.18s;
-                    }
-                    .profit-donut__chart.is-dimmed .profit-donut__seg { opacity: 0.28; }
-                    .profit-donut__chart .profit-donut__seg.is-active {
-                        opacity: 1;
-                        filter: drop-shadow(0 2px 6px rgba(26, 58, 92, 0.25));
-                    }
-                    .profit-donut__leader {
-                        stroke: #888780; stroke-width: 0.7; fill: none;
-                        transition: stroke 0.15s, stroke-width 0.15s;
-                    }
-                    .profit-donut__chart.is-dimmed .profit-donut__leader { opacity: 0.3; }
-                    .profit-donut__leader.is-active { stroke: #1a3a5c; stroke-width: 1.2; opacity: 1 !important; }
-                    .profit-donut__label-name { font-size: 11px; font-weight: 600; fill: #1a3a5c; transition: opacity 0.15s; }
-                    .profit-donut__label-pct { font-size: 12px; font-weight: 700; fill: #1a3a5c; transition: opacity 0.15s; }
-                    .profit-donut__chart.is-dimmed .profit-donut__label-name,
-                    .profit-donut__chart.is-dimmed .profit-donut__label-pct { opacity: 0.4; }
-                    .profit-donut__chart .is-active.profit-donut__label-name,
-                    .profit-donut__chart .is-active.profit-donut__label-pct { opacity: 1; fill: #1a3a5c; }
-                    .profit-donut__center-pct {
-                        font-size: 24px; font-weight: 700; fill: #1a3a5c;
-                    }
+                    .profit-donut__seg { cursor: pointer; }
+                    .profit-donut__chart .profit-donut__seg.is-dim { opacity: 0.28; }
+                    .profit-donut__chart .profit-donut__seg.is-active { filter: drop-shadow(0 2px 6px rgba(26, 58, 92, 0.28)); }
+                    .profit-donut__leader { stroke: #888780; stroke-width: 0.7; fill: none; }
+                    .profit-donut__leader.is-dim { opacity: 0.3; }
+                    .profit-donut__leader.is-active { stroke: #1a3a5c; stroke-width: 1.2; }
+                    .profit-donut__label-name { font-size: 11px; font-weight: 600; fill: #1a3a5c; cursor: pointer; }
+                    .profit-donut__label-pct { font-size: 12px; font-weight: 700; cursor: pointer; }
+                    .profit-donut__label-name.is-dim, .profit-donut__label-pct.is-dim { opacity: 0.4; }
+                    .profit-donut__center-pct { font-size: 24px; font-weight: 700; fill: #1a3a5c; }
                     .profit-donut__center-label { font-size: 10px; fill: #888780; }
                     .profit-donut__compare { display: none; }
                     .profit-donut.compare-on .profit-donut__compare { display: block; }
@@ -271,30 +258,16 @@
                     </div>
 
                     <div class="profit-donut__charts">
-                        <!-- ===== Compute Layer (main) ===== -->
                         <div class="profit-donut__chart" data-chart="compute">
                             <div class="profit-donut__chart-title">计算层利润分布</div>
                             <div class="profit-donut__chart-sub">2026 估算 · 100% 利润池</div>
-                            <svg viewBox="-210 -180 420 380" xmlns="http://www.w3.org/2000/svg" aria-label="计算层利润分布环形图">
-                                <g class="profit-donut__leaders"></g>
-                                <g class="profit-donut__segs"></g>
-                                <g class="profit-donut__labels"></g>
-                                <text class="profit-donut__center-pct" x="0" y="-2" text-anchor="middle">100%</text>
-                                <text class="profit-donut__center-label" x="0" y="14" text-anchor="middle">利润池</text>
-                            </svg>
+                            <svg viewBox="-220 -190 440 400" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" aria-label="计算层利润分布环形图"></svg>
                         </div>
 
-                        <!-- ===== Real Estate (compare) ===== -->
                         <div class="profit-donut__chart profit-donut__compare" data-chart="realestate">
                             <div class="profit-donut__chart-title">房地产利润分布（参照）</div>
                             <div class="profit-donut__chart-sub">中国市场结构</div>
-                            <svg viewBox="-180 -150 360 320" xmlns="http://www.w3.org/2000/svg" aria-label="房地产利润分布环形图">
-                                <g class="profit-donut__leaders"></g>
-                                <g class="profit-donut__segs"></g>
-                                <g class="profit-donut__labels"></g>
-                                <text class="profit-donut__center-pct" x="0" y="-2" text-anchor="middle" style="font-size:20px;">100%</text>
-                                <text class="profit-donut__center-label" x="0" y="13" text-anchor="middle">利润池</text>
-                            </svg>
+                            <svg viewBox="-190 -160 380 340" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" aria-label="房地产利润分布环形图"></svg>
                         </div>
 
                         <div class="profit-donut__tooltip" id="profit-donut-tooltip"></div>
@@ -323,150 +296,216 @@
                         { name: '中介', role: '套利型生意', companies: '链家 · 贝壳等', pct: 5, color: '#c8c5bc' }
                     ];
 
-                    function buildDonut(data, rOuter, rInner, labelGap) {
-                        var cum = 0;
-                        return data.map(function (item, i) {
-                            var startA = (-90 + cum * 3.6) * Math.PI / 180;
-                            var endA   = (-90 + (cum + item.pct) * 3.6) * Math.PI / 180;
-                            var midA   = (-90 + (cum + item.pct / 2) * 3.6) * Math.PI / 180;
-                            var large  = item.pct > 50 ? 1 : 0;
-                            var x1o = rOuter * Math.cos(startA), y1o = rOuter * Math.sin(startA);
-                            var x2o = rOuter * Math.cos(endA),   y2o = rOuter * Math.sin(endA);
-                            var x1i = rInner * Math.cos(startA), y1i = rInner * Math.sin(startA);
-                            var x2i = rInner * Math.cos(endA),   y2i = rInner * Math.sin(endA);
-                            // Leader anchor on outer arc
-                            var lax = rOuter * Math.cos(midA), lay = rOuter * Math.sin(midA);
-                            // Bend point (just outside outer ring)
-                            var lbx = (rOuter + 12) * Math.cos(midA), lby = (rOuter + 12) * Math.sin(midA);
-                            // Far end of horizontal leader (push out to side)
-                            var side = Math.cos(midA) >= 0 ? 1 : -1;
-                            var lex = side * (rOuter + labelGap);
-                            var ley = lby;
-                            var d = 'M ' + x1o.toFixed(2) + ',' + y1o.toFixed(2)
-                                  + ' A ' + rOuter + ',' + rOuter + ' 0 ' + large + ',1 ' + x2o.toFixed(2) + ',' + y2o.toFixed(2)
-                                  + ' L ' + x2i.toFixed(2) + ',' + y2i.toFixed(2)
-                                  + ' A ' + rInner + ',' + rInner + ' 0 ' + large + ',0 ' + x1i.toFixed(2) + ',' + y1i.toFixed(2)
-                                  + ' Z';
-                            cum += item.pct;
-                            return {
-                                d: d, item: item, idx: i,
-                                leaderD: 'M ' + lax.toFixed(2) + ',' + lay.toFixed(2)
-                                       + ' L ' + lbx.toFixed(2) + ',' + lby.toFixed(2)
-                                       + ' L ' + lex.toFixed(2) + ',' + ley.toFixed(2),
-                                labelX: lex + side * 4,
-                                labelY: ley,
-                                labelAnchor: side === 1 ? 'start' : 'end'
-                            };
-                        });
-                    }
+                    function init() {
+                        if (typeof d3 === 'undefined') { setTimeout(init, 50); return; }
 
-                    var root = document.getElementById('profit-donut');
-                    if (!root) return;
-                    var tooltip = document.getElementById('profit-donut-tooltip');
-                    var SVGNS = 'http://www.w3.org/2000/svg';
+                        var root = document.getElementById('profit-donut');
+                        if (!root) return;
+                        var tooltip = d3.select('#profit-donut-tooltip');
 
-                    function renderChart(chartEl, data, rOuter, rInner, labelGap) {
-                        var segGroup = chartEl.querySelector('.profit-donut__segs');
-                        var leaderGroup = chartEl.querySelector('.profit-donut__leaders');
-                        var labelGroup = chartEl.querySelector('.profit-donut__labels');
-                        var paths = buildDonut(data, rOuter, rInner, labelGap);
+                        function buildChart(selector, data, rOuter, rInner, labelGap) {
+                            var chartEl = root.querySelector(selector);
+                            var svg = d3.select(chartEl).select('svg');
+                            // Clear previous render (idempotent)
+                            svg.selectAll('*').remove();
 
-                        paths.forEach(function (p) {
-                            // Segment path
-                            var path = document.createElementNS(SVGNS, 'path');
-                            path.setAttribute('d', p.d);
-                            path.setAttribute('fill', p.item.color);
-                            path.setAttribute('class', 'profit-donut__seg');
-                            path.setAttribute('data-idx', p.idx);
-                            segGroup.appendChild(path);
+                            var pie = d3.pie().value(function (d) { return d.pct; }).sort(null);
+                            var arc = d3.arc().innerRadius(rInner).outerRadius(rOuter);
+                            var arcs = pie(data);
 
-                            // Leader line
-                            var leader = document.createElementNS(SVGNS, 'path');
-                            leader.setAttribute('d', p.leaderD);
-                            leader.setAttribute('class', 'profit-donut__leader');
-                            leader.setAttribute('data-idx', p.idx);
-                            leaderGroup.appendChild(leader);
+                            var gSeg = svg.append('g').attr('class', 'segs');
+                            var gLeader = svg.append('g').attr('class', 'leaders');
+                            var gLabel = svg.append('g').attr('class', 'labels');
+                            var gCenter = svg.append('g').attr('class', 'center');
 
-                            // Label: name + pct on two stacked lines
-                            var nameText = document.createElementNS(SVGNS, 'text');
-                            nameText.setAttribute('x', p.labelX);
-                            nameText.setAttribute('y', p.labelY - 4);
-                            nameText.setAttribute('text-anchor', p.labelAnchor);
-                            nameText.setAttribute('class', 'profit-donut__label-name');
-                            nameText.setAttribute('data-idx', p.idx);
-                            nameText.textContent = p.item.name;
-                            labelGroup.appendChild(nameText);
+                            // Center text
+                            gCenter.append('text')
+                                .attr('class', 'profit-donut__center-pct')
+                                .attr('text-anchor', 'middle')
+                                .attr('y', -2)
+                                .style('font-size', rOuter < 100 ? '20px' : '24px')
+                                .text('100%');
+                            gCenter.append('text')
+                                .attr('class', 'profit-donut__center-label')
+                                .attr('text-anchor', 'middle')
+                                .attr('y', rOuter < 100 ? 13 : 14)
+                                .text('利润池');
 
-                            var pctText = document.createElementNS(SVGNS, 'text');
-                            pctText.setAttribute('x', p.labelX);
-                            pctText.setAttribute('y', p.labelY + 11);
-                            pctText.setAttribute('text-anchor', p.labelAnchor);
-                            pctText.setAttribute('class', 'profit-donut__label-pct');
-                            pctText.setAttribute('data-idx', p.idx);
-                            pctText.setAttribute('fill', p.item.color);
-                            pctText.textContent = p.item.pct + '%';
-                            labelGroup.appendChild(pctText);
-                        });
+                            // Segments — entry animation: tween from startAngle to endAngle
+                            var segPaths = gSeg.selectAll('path')
+                                .data(arcs)
+                                .enter().append('path')
+                                .attr('class', 'profit-donut__seg')
+                                .attr('fill', function (d) { return d.data.color; })
+                                .attr('data-idx', function (d, i) { return i; })
+                                .each(function (d) { this._cur = { startAngle: d.startAngle, endAngle: d.startAngle }; });
 
-                        function activate(idx, evt) {
-                            chartEl.classList.add('is-dimmed');
-                            chartEl.querySelectorAll('[data-idx]').forEach(function (el) {
-                                el.classList.toggle('is-active', +el.getAttribute('data-idx') === idx);
+                            segPaths.transition()
+                                .duration(750)
+                                .delay(function (d, i) { return i * 60; })
+                                .ease(d3.easeCubicOut)
+                                .attrTween('d', function (d) {
+                                    var i = d3.interpolate(this._cur, d);
+                                    this._cur = i(1);
+                                    return function (t) { return arc(i(t)); };
+                                });
+
+                            // Leaders + labels — pre-compute geometry per slice
+                            var labelData = arcs.map(function (d, i) {
+                                var midA = (d.startAngle + d.endAngle) / 2 - Math.PI / 2;
+                                var ax = rOuter * Math.cos(midA);
+                                var ay = rOuter * Math.sin(midA);
+                                var bx = (rOuter + 12) * Math.cos(midA);
+                                var by = (rOuter + 12) * Math.sin(midA);
+                                var side = Math.cos(midA) >= 0 ? 1 : -1;
+                                var ex = side * (rOuter + labelGap);
+                                var ey = by;
+                                return {
+                                    idx: i,
+                                    item: d.data,
+                                    color: d.data.color,
+                                    leaderD: 'M' + ax + ',' + ay + 'L' + bx + ',' + by + 'L' + ex + ',' + ey,
+                                    labelX: ex + side * 4,
+                                    labelY: ey,
+                                    anchor: side === 1 ? 'start' : 'end'
+                                };
                             });
-                            var pct = chartEl.querySelector('.profit-donut__center-pct');
-                            var lbl = chartEl.querySelector('.profit-donut__center-label');
-                            pct.textContent = data[idx].pct + '%';
-                            lbl.textContent = data[idx].name;
-                            var item = data[idx];
-                            tooltip.innerHTML =
-                                '<div class="profit-donut__tooltip-name">' + item.name + '</div>' +
-                                '<div class="profit-donut__tooltip-pct">' + item.pct + '%</div>' +
-                                '<div class="profit-donut__tooltip-role">' + item.role + '</div>' +
-                                '<div class="profit-donut__tooltip-cos">' + item.companies + '</div>';
-                            tooltip.classList.add('is-visible');
-                            positionTooltip(evt);
+
+                            // Leaders (start invisible, fade in after segments draw)
+                            var leaders = gLeader.selectAll('path')
+                                .data(labelData)
+                                .enter().append('path')
+                                .attr('class', 'profit-donut__leader')
+                                .attr('d', function (d) { return d.leaderD; })
+                                .attr('data-idx', function (d) { return d.idx; })
+                                .style('opacity', 0);
+
+                            leaders.transition().delay(450).duration(400).style('opacity', 1);
+
+                            // Label texts (name + pct, two lines)
+                            var nameTexts = gLabel.selectAll('text.profit-donut__label-name')
+                                .data(labelData)
+                                .enter().append('text')
+                                .attr('class', 'profit-donut__label-name')
+                                .attr('x', function (d) { return d.labelX; })
+                                .attr('y', function (d) { return d.labelY - 4; })
+                                .attr('text-anchor', function (d) { return d.anchor; })
+                                .attr('data-idx', function (d) { return d.idx; })
+                                .style('opacity', 0)
+                                .text(function (d) { return d.item.name; });
+
+                            var pctTexts = gLabel.selectAll('text.profit-donut__label-pct')
+                                .data(labelData)
+                                .enter().append('text')
+                                .attr('class', 'profit-donut__label-pct')
+                                .attr('x', function (d) { return d.labelX; })
+                                .attr('y', function (d) { return d.labelY + 11; })
+                                .attr('text-anchor', function (d) { return d.anchor; })
+                                .attr('data-idx', function (d) { return d.idx; })
+                                .attr('fill', function (d) { return d.color; })
+                                .style('opacity', 0)
+                                .text(function (d) { return d.item.pct + '%'; });
+
+                            nameTexts.transition().delay(500).duration(400).style('opacity', 1);
+                            pctTexts.transition().delay(500).duration(400).style('opacity', 1);
+
+                            // Hover / click interaction
+                            var allInteractive = chartEl.querySelectorAll('[data-idx]');
+
+                            function activate(idx, evt) {
+                                d3.select(chartEl).selectAll('.profit-donut__seg')
+                                    .classed('is-dim', function (d, i) { return i !== idx; })
+                                    .classed('is-active', function (d, i) { return i === idx; });
+                                d3.select(chartEl).selectAll('.profit-donut__leader')
+                                    .classed('is-dim', function (d, i) { return i !== idx; })
+                                    .classed('is-active', function (d, i) { return i === idx; });
+                                d3.select(chartEl).selectAll('.profit-donut__label-name, .profit-donut__label-pct')
+                                    .classed('is-dim', function (d) { return d.idx !== idx; });
+                                gCenter.select('.profit-donut__center-pct').text(data[idx].pct + '%');
+                                gCenter.select('.profit-donut__center-label').text(data[idx].name);
+                                var item = data[idx];
+                                tooltip.html(
+                                    '<div class="profit-donut__tooltip-name">' + item.name + '</div>' +
+                                    '<div class="profit-donut__tooltip-pct">' + item.pct + '%</div>' +
+                                    '<div class="profit-donut__tooltip-role">' + item.role + '</div>' +
+                                    '<div class="profit-donut__tooltip-cos">' + item.companies + '</div>'
+                                ).classed('is-visible', true);
+                                positionTooltip(evt);
+                            }
+
+                            function deactivate() {
+                                d3.select(chartEl).selectAll('.profit-donut__seg, .profit-donut__leader, .profit-donut__label-name, .profit-donut__label-pct')
+                                    .classed('is-dim', false)
+                                    .classed('is-active', false);
+                                gCenter.select('.profit-donut__center-pct').text('100%');
+                                gCenter.select('.profit-donut__center-label').text('利润池');
+                                tooltip.classed('is-visible', false);
+                            }
+
+                            function positionTooltip(evt) {
+                                var rect = root.getBoundingClientRect();
+                                var x = evt.clientX - rect.left + 14;
+                                var y = evt.clientY - rect.top + 14;
+                                var node = tooltip.node();
+                                var tipW = node ? node.offsetWidth : 220;
+                                if (x + tipW > rect.width - 10) x = evt.clientX - rect.left - tipW - 14;
+                                tooltip.style('left', x + 'px').style('top', y + 'px');
+                            }
+
+                            d3.select(chartEl).selectAll('[data-idx]')
+                                .on('mouseenter', function (event) {
+                                    activate(+this.getAttribute('data-idx'), event);
+                                })
+                                .on('mousemove', function (event) { positionTooltip(event); })
+                                .on('mouseleave', deactivate)
+                                .on('click', function (event) {
+                                    activate(+this.getAttribute('data-idx'), event);
+                                });
                         }
 
-                        function deactivate() {
-                            chartEl.classList.remove('is-dimmed');
-                            chartEl.querySelectorAll('[data-idx]').forEach(function (el) { el.classList.remove('is-active'); });
-                            chartEl.querySelector('.profit-donut__center-pct').textContent = '100%';
-                            chartEl.querySelector('.profit-donut__center-label').textContent = '利润池';
-                            tooltip.classList.remove('is-visible');
+                        // Trigger render on first viewport entry (intersection observer)
+                        var rendered = { compute: false, realestate: false };
+                        function renderCompute() {
+                            if (rendered.compute) return;
+                            buildChart('[data-chart="compute"]', COMPUTE, 110, 68, 96);
+                            rendered.compute = true;
+                        }
+                        function renderRealEstate() {
+                            if (rendered.realestate) return;
+                            buildChart('[data-chart="realestate"]', REALESTATE, 92, 56, 82);
+                            rendered.realestate = true;
                         }
 
-                        function positionTooltip(evt) {
-                            var rect = root.getBoundingClientRect();
-                            var x = evt.clientX - rect.left + 14;
-                            var y = evt.clientY - rect.top + 14;
-                            var tipW = tooltip.offsetWidth || 220;
-                            if (x + tipW > rect.width - 10) x = evt.clientX - rect.left - tipW - 14;
-                            tooltip.style.left = x + 'px';
-                            tooltip.style.top = y + 'px';
+                        if ('IntersectionObserver' in window) {
+                            var io = new IntersectionObserver(function (entries) {
+                                entries.forEach(function (entry) {
+                                    if (entry.isIntersecting) {
+                                        renderCompute();
+                                        io.unobserve(entry.target);
+                                    }
+                                });
+                            }, { rootMargin: '0px 0px -10% 0px' });
+                            io.observe(root);
+                        } else {
+                            renderCompute();
                         }
 
-                        // Hover bindings on segments and label texts (clickable everywhere)
-                        chartEl.querySelectorAll('.profit-donut__seg, .profit-donut__label-name, .profit-donut__label-pct').forEach(function (el) {
-                            el.style.cursor = 'pointer';
-                            el.addEventListener('mouseenter', function (e) { activate(+el.getAttribute('data-idx'), e); });
-                            el.addEventListener('mousemove', positionTooltip);
-                            el.addEventListener('mouseleave', deactivate);
-                            el.addEventListener('click', function (e) { activate(+el.getAttribute('data-idx'), e); });
+                        // Compare toggle (checkbox)
+                        var checkbox = document.getElementById('profit-donut-compare-toggle');
+                        checkbox.addEventListener('change', function () {
+                            root.classList.toggle('compare-on', checkbox.checked);
+                            if (checkbox.checked) renderRealEstate();
                         });
                     }
 
-                    var computeChart = root.querySelector('[data-chart="compute"]');
-                    var realChart = root.querySelector('[data-chart="realestate"]');
-                    renderChart(computeChart, COMPUTE, 110, 68, 92);
-                    renderChart(realChart, REALESTATE, 90, 56, 78);
-
-                    // Compare toggle (checkbox)
-                    var checkbox = document.getElementById('profit-donut-compare-toggle');
-                    checkbox.addEventListener('change', function () {
-                        root.classList.toggle('compare-on', checkbox.checked);
-                    });
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', init);
+                    } else {
+                        init();
+                    }
                 })();
                 </script>
+
 
 
                 <p>这个类比最妙的地方：<strong>它一眼让人看懂为什么计算层整体暴涨，但只有"卖地的"和"卖钢筋水泥的"能赚到超额利润，其他人都是给 NVIDIA 打工。</strong></p>
