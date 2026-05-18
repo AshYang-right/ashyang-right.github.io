@@ -350,25 +350,62 @@
                                     return function (t) { return arc(i(t)); };
                                 });
 
-                            // Leaders + labels — pre-compute geometry per slice
+                            // Leaders + labels — compute initial positions, then resolve label collisions per side
                             var labelData = arcs.map(function (d, i) {
                                 var midA = (d.startAngle + d.endAngle) / 2 - Math.PI / 2;
-                                var ax = rOuter * Math.cos(midA);
+                                var ax = rOuter * Math.cos(midA);   // anchor on outer arc
                                 var ay = rOuter * Math.sin(midA);
-                                var bx = (rOuter + 12) * Math.cos(midA);
-                                var by = (rOuter + 12) * Math.sin(midA);
                                 var side = Math.cos(midA) >= 0 ? 1 : -1;
                                 var ex = side * (rOuter + labelGap);
-                                var ey = by;
+                                var ey = ay; // initial label y = arc anchor y
                                 return {
                                     idx: i,
                                     item: d.data,
                                     color: d.data.color,
-                                    leaderD: 'M' + ax + ',' + ay + 'L' + bx + ',' + by + 'L' + ex + ',' + ey,
-                                    labelX: ex + side * 4,
-                                    labelY: ey,
-                                    anchor: side === 1 ? 'start' : 'end'
+                                    side: side,
+                                    ax: ax, ay: ay,
+                                    ex: ex, ey: ey
                                 };
+                            });
+
+                            // Resolve vertical label collisions on each side
+                            // Each label needs ~28px of vertical space (name 11px + pct 12px + 5px gap)
+                            var LABEL_H = 28;
+                            function resolveSide(arr) {
+                                // Sort top to bottom
+                                arr.sort(function (a, b) { return a.ey - b.ey; });
+                                // Top-down pass: push down if too close to previous
+                                for (var i = 1; i < arr.length; i++) {
+                                    if (arr[i].ey - arr[i - 1].ey < LABEL_H) {
+                                        arr[i].ey = arr[i - 1].ey + LABEL_H;
+                                    }
+                                }
+                                // Bottom-up pass: pull up if last item exceeds bound
+                                var maxY = rOuter + 14;
+                                if (arr.length && arr[arr.length - 1].ey > maxY) {
+                                    arr[arr.length - 1].ey = maxY;
+                                    for (var j = arr.length - 2; j >= 0; j--) {
+                                        if (arr[j + 1].ey - arr[j].ey < LABEL_H) {
+                                            arr[j].ey = arr[j + 1].ey - LABEL_H;
+                                        }
+                                    }
+                                }
+                            }
+                            var leftSide = labelData.filter(function (d) { return d.side === -1; });
+                            var rightSide = labelData.filter(function (d) { return d.side === 1; });
+                            resolveSide(leftSide);
+                            resolveSide(rightSide);
+
+                            // After resolving, re-derive elbow paths and label positions
+                            labelData.forEach(function (d) {
+                                // Elbow point: just outside outer arc at the new label y
+                                var elbowX = d.side * (rOuter + 12);
+                                d.leaderD = 'M' + d.ax + ',' + d.ay
+                                          + 'L' + elbowX + ',' + d.ey
+                                          + 'L' + d.ex + ',' + d.ey;
+                                d.labelX = d.ex + d.side * 4;
+                                d.labelY = d.ey;
+                                d.anchor = d.side === 1 ? 'start' : 'end';
                             });
 
                             // Leaders (start invisible, fade in after segments draw)
