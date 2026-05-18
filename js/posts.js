@@ -4,6 +4,13 @@
  */
 const POSTS = [
     {
+        slug: "llm-industry-chain-margin-analysis",
+        title: "LLM 产业链溢价权分析：钱最终会流到哪里？",
+        date: "2026-05-18",
+        summary: "从产业链溢价权的视角拆解 LLM。沿着「水电/核电 → NVIDIA/AWS → Claude → Cursor」一条链走一遍，看每一段的钱被谁赚走。能源层是「卖铲子的赚钱，挖矿的不赚钱」；计算层像中国特色房地产（NVIDIA 是卖地的地方政府）；模型层双层撕裂，溢价 = 能力差 × 时间窗，中国独立模型层两头挨打；应用层是价值漏斗终点，定价锚定的是被替代职业的小时费。",
+        tags: ["AI", "产业分析", "投资", "LLM"]
+    },
+    {
         slug: "ai-world-engine-architecture",
         title: "构建沉浸世界的智能 NPC（四）：让世界真正动态运行",
         date: "2026-04-07",
