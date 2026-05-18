@@ -175,6 +175,138 @@
                     </tbody>
                 </table>
 
+                <figure class="profit-comparison-figure" style="margin: 36px 0; padding: 24px; background: #faf7ef; border: 1px solid #e8e4d8; border-radius: 8px;">
+                    <svg width="100%" viewBox="0 0 760 480" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+                        <!-- ========= Master Title ========= -->
+                        <text x="380" y="26" text-anchor="middle" font-size="14" font-weight="600" fill="#1a3a5c" letter-spacing="0.5">两个产业，同一个利润分布逻辑</text>
+                        <text x="380" y="44" text-anchor="middle" font-size="11" fill="#888780">数字为粗略估算，用于结构对比</text>
+
+                        <!-- ========= LEFT: COMPUTE LAYER (main, r_out=110, r_in=68) ========= -->
+                        <g transform="translate(190, 250)">
+                            <!-- Section title above donut -->
+                            <text x="0" y="-160" text-anchor="middle" font-size="13" font-weight="600" fill="#1a3a5c">计算层利润分布</text>
+                            <text x="0" y="-144" text-anchor="middle" font-size="10" fill="#888780">2026 估算</text>
+
+                            <!-- 1. NVIDIA 55% — deep navy DOMINANT -->
+                            <path d="M 0.00,-110.00 A 110,110 0 1,1 -33.99,104.62 L -21.01,64.67 A 68,68 0 1,0 0.00,-68.00 Z" fill="#1a3a5c"/>
+                            <!-- 2. HBM 12% — warm orange (accent) -->
+                            <path d="M -33.99,104.62 A 110,110 0 0,1 -96.39,52.99 L -59.59,32.76 A 68,68 0 0,0 -21.01,64.67 Z" fill="#e8743b"/>
+                            <!-- 3. CSP AI 12% — mid navy -->
+                            <path d="M -96.39,52.99 A 110,110 0 0,1 -106.54,-27.36 L -65.86,-16.91 A 68,68 0 0,0 -59.59,32.76 Z" fill="#5a7a9c"/>
+                            <!-- 4. DC Equipment 10% — sand -->
+                            <path d="M -106.54,-27.36 A 110,110 0 0,1 -70.12,-84.76 L -43.34,-52.39 A 68,68 0 0,0 -65.86,-16.91 Z" fill="#d4a574"/>
+                            <!-- 5. Server OEM 7% — light gray -->
+                            <path d="M -70.12,-84.76 A 110,110 0 0,1 -27.36,-106.54 L -16.91,-65.86 A 68,68 0 0,0 -43.34,-52.39 Z" fill="#a8a8a8"/>
+                            <!-- 6. Neocloud 4% — pale gray -->
+                            <path d="M -27.36,-106.54 A 110,110 0 0,1 -0.00,-110.00 L -0.00,-68.00 A 68,68 0 0,0 -16.91,-65.86 Z" fill="#c8c5bc"/>
+
+                            <!-- Center text -->
+                            <text x="0" y="-4" text-anchor="middle" font-size="20" font-weight="700" fill="#1a3a5c">100%</text>
+                            <text x="0" y="14" text-anchor="middle" font-size="10" fill="#888780">利润池</text>
+
+                            <!-- ===== Labels with leader lines ===== -->
+                            <!-- NVIDIA 55%: label at right (using mid-angle ~108deg from -90, so right side) -->
+                            <line x1="40" y1="20" x2="135" y2="20" stroke="#1a3a5c" stroke-width="0.8"/>
+                            <text x="140" y="16" font-size="12" font-weight="600" fill="#1a3a5c">NVIDIA</text>
+                            <text x="140" y="32" font-size="14" font-weight="700" fill="#1a3a5c">55%</text>
+                            <text x="140" y="48" font-size="10" fill="#5f5e5a">卖地的地方政府</text>
+
+                            <!-- HBM 12%: label at lower-left -->
+                            <line x1="-82" y1="99" x2="-128" y2="118" stroke="#5f5e5a" stroke-width="0.6"/>
+                            <text x="-132" y="118" text-anchor="end" font-size="11" font-weight="600" fill="#1a3a5c">HBM 内存</text>
+                            <text x="-132" y="132" text-anchor="end" font-size="11" font-weight="700" fill="#e8743b">12%</text>
+
+                            <!-- CSP AI 12%: label at left -->
+                            <line x1="-127" y1="16" x2="-150" y2="16" stroke="#5f5e5a" stroke-width="0.6"/>
+                            <text x="-154" y="12" text-anchor="end" font-size="11" font-weight="600" fill="#1a3a5c">CSP（AI 业务）</text>
+                            <text x="-154" y="26" text-anchor="end" font-size="11" font-weight="700" fill="#5a7a9c">12%</text>
+
+                            <!-- DC Equipment 10%: label at upper-left -->
+                            <line x1="-108" y1="-69" x2="-140" y2="-90" stroke="#5f5e5a" stroke-width="0.6"/>
+                            <text x="-144" y="-92" text-anchor="end" font-size="11" font-weight="600" fill="#1a3a5c">数据中心配套</text>
+                            <text x="-144" y="-78" text-anchor="end" font-size="11" font-weight="700" fill="#1a3a5c">10%</text>
+
+                            <!-- Server OEM 7%: label at top -->
+                            <line x1="-58" y1="-114" x2="-58" y2="-138" stroke="#5f5e5a" stroke-width="0.6"/>
+                            <text x="-58" y="-142" text-anchor="middle" font-size="10" font-weight="600" fill="#5f5e5a">服务器 OEM</text>
+                            <text x="-58" y="-156" text-anchor="middle" font-size="10" font-weight="700" fill="#5f5e5a">7%</text>
+
+                            <!-- Neocloud 4%: label at top -->
+                            <line x1="-16" y1="-127" x2="0" y2="-156" stroke="#888780" stroke-width="0.6"/>
+                            <text x="6" y="-156" text-anchor="start" font-size="10" font-weight="600" fill="#888780">Neocloud</text>
+                            <text x="6" y="-142" text-anchor="start" font-size="10" font-weight="700" fill="#888780">4%</text>
+                        </g>
+
+                        <!-- Bottom annotation for compute -->
+                        <text x="190" y="425" text-anchor="middle" font-size="10.5" fill="#5f5e5a" font-style="italic">NVIDIA 一家独占过半，其他人在分剩下的</text>
+
+                        <!-- ========= Vertical divider ========= -->
+                        <line x1="395" y1="80" x2="395" y2="410" stroke="#dcd8c8" stroke-width="0.8" stroke-dasharray="3,3"/>
+
+                        <!-- ========= RIGHT: REAL ESTATE (smaller, r_out=80, r_in=50) ========= -->
+                        <g transform="translate(570, 250)">
+                            <!-- Section title -->
+                            <text x="0" y="-130" text-anchor="middle" font-size="12" font-weight="600" fill="#1a3a5c">房地产利润分布</text>
+                            <text x="0" y="-114" text-anchor="middle" font-size="9.5" fill="#888780">中国市场结构（参照）</text>
+
+                            <!-- 1. 地方政府土拍 50% — deep navy -->
+                            <path d="M 0.00,-80.00 A 80,80 0 0,1 0.00,80.00 L 0.00,50.00 A 50,50 0 0,0 0.00,-50.00 Z" fill="#1a3a5c"/>
+                            <!-- 2. 银行（房贷利息）18% — warm orange -->
+                            <path d="M 0.00,80.00 A 80,80 0 0,1 -72.39,34.06 L -45.24,21.29 A 50,50 0 0,0 0.00,50.00 Z" fill="#e8743b"/>
+                            <!-- 3. 钢筋水泥 12% — mid navy -->
+                            <path d="M -72.39,34.06 A 80,80 0 0,1 -76.08,-24.72 L -47.55,-15.45 A 50,50 0 0,0 -45.24,21.29 Z" fill="#5a7a9c"/>
+                            <!-- 4. 装修家装 8% — sand -->
+                            <path d="M -76.08,-24.72 A 80,80 0 0,1 -54.76,-58.32 L -34.23,-36.45 A 50,50 0 0,0 -47.55,-15.45 Z" fill="#d4a574"/>
+                            <!-- 5. 房开企业 7% — light gray -->
+                            <path d="M -54.76,-58.32 A 80,80 0 0,1 -24.72,-76.08 L -15.45,-47.55 A 50,50 0 0,0 -34.23,-36.45 Z" fill="#a8a8a8"/>
+                            <!-- 6. 中介 5% — pale gray -->
+                            <path d="M -24.72,-76.08 A 80,80 0 0,1 -0.00,-80.00 L -0.00,-50.00 A 50,50 0 0,0 -15.45,-47.55 Z" fill="#c8c5bc"/>
+
+                            <!-- Center text -->
+                            <text x="0" y="-2" text-anchor="middle" font-size="16" font-weight="700" fill="#1a3a5c">100%</text>
+                            <text x="0" y="13" text-anchor="middle" font-size="9" fill="#888780">利润池</text>
+
+                            <!-- Labels (compact, right side) -->
+                            <!-- 地方政府 50% — right -->
+                            <line x1="36" y1="0" x2="92" y2="0" stroke="#1a3a5c" stroke-width="0.8"/>
+                            <text x="96" y="-3" font-size="10.5" font-weight="600" fill="#1a3a5c">地方政府（土拍）</text>
+                            <text x="96" y="11" font-size="12" font-weight="700" fill="#1a3a5c">50%</text>
+
+                            <!-- 银行 18% — bottom-left -->
+                            <line x1="-53" y1="83" x2="-78" y2="100" stroke="#5f5e5a" stroke-width="0.6"/>
+                            <text x="-82" y="100" text-anchor="end" font-size="10" font-weight="600" fill="#1a3a5c">银行（按揭利息）</text>
+                            <text x="-82" y="113" text-anchor="end" font-size="10.5" font-weight="700" fill="#e8743b">18%</text>
+
+                            <!-- 钢筋水泥 12% — left -->
+                            <line x1="-98" y1="6" x2="-118" y2="6" stroke="#5f5e5a" stroke-width="0.6"/>
+                            <text x="-122" y="2" text-anchor="end" font-size="10" font-weight="600" fill="#1a3a5c">钢筋水泥</text>
+                            <text x="-122" y="15" text-anchor="end" font-size="10.5" font-weight="700" fill="#5a7a9c">12%</text>
+
+                            <!-- 装修 8% — upper-left -->
+                            <line x1="-83" y1="-53" x2="-110" y2="-70" stroke="#5f5e5a" stroke-width="0.6"/>
+                            <text x="-114" y="-72" text-anchor="end" font-size="10" font-weight="600" fill="#1a3a5c">装修家装</text>
+                            <text x="-114" y="-58" text-anchor="end" font-size="10.5" font-weight="700" fill="#1a3a5c">8%</text>
+
+                            <!-- 房开 7% — top -->
+                            <line x1="-50" y1="-84" x2="-50" y2="-104" stroke="#5f5e5a" stroke-width="0.6"/>
+                            <text x="-50" y="-108" text-anchor="middle" font-size="9.5" font-weight="600" fill="#5f5e5a">房开企业</text>
+                            <text x="-50" y="-120" text-anchor="middle" font-size="9.5" font-weight="700" fill="#5f5e5a">7%</text>
+
+                            <!-- 中介 5% — top right -->
+                            <line x1="-15" y1="-97" x2="6" y2="-120" stroke="#888780" stroke-width="0.6"/>
+                            <text x="10" y="-120" text-anchor="start" font-size="9.5" font-weight="600" fill="#888780">中介</text>
+                            <text x="10" y="-108" text-anchor="start" font-size="9.5" font-weight="700" fill="#888780">5%</text>
+                        </g>
+
+                        <!-- Bottom annotation for real estate -->
+                        <text x="570" y="425" text-anchor="middle" font-size="10.5" fill="#5f5e5a" font-style="italic">地方政府独占过半，其他人在分剩下的</text>
+
+                        <!-- ========= Bottom unifying message ========= -->
+                        <text x="380" y="462" text-anchor="middle" font-size="12" font-weight="600" fill="#1a3a5c">两个产业的"卖地者"都在拿走最大那块蛋糕</text>
+                    </svg>
+                    <figcaption style="text-align:center; font-size:0.82rem; color:#888780; margin-top:12px; font-style:italic;">图：计算层（左，主图）与房地产行业（右，对比）的利润分布。两图结构同构——上游垄断方独占过半，组装/中介环节只能分小份。</figcaption>
+                </figure>
+
                 <p>这个类比最妙的地方：<strong>它一眼让人看懂为什么计算层整体暴涨，但只有"卖地的"和"卖钢筋水泥的"能赚到超额利润，其他人都是给 NVIDIA 打工。</strong></p>
 
                 <h3 id="compute-nvidia">NVIDIA = 卖地的地方政府</h3>
