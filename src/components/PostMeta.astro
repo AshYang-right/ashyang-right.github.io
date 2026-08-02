@@ -1,0 +1,14 @@
+---
+import { formatDate, tagSlug } from "../lib/content";
+interface Props { date: Date; tags?: string[]; seriesLabel?: string; }
+const { date, tags = [], seriesLabel } = Astro.props;
+---
+<div class="post-meta">
+  <time datetime={date.toISOString()}>{formatDate(date)}</time>
+  {seriesLabel && <span>· {seriesLabel}</span>}
+  {tags.length > 0 && (
+    <span class="tag-list">
+      {tags.map((tag) => <a class="tag-pill" href={`/tags/${tagSlug(tag)}.html`}>{tag}</a>)}
+    </span>
+  )}
+</div>

@@ -1,0 +1,107 @@
+<figure class="data-figure" data-money-flow>
+  <div class="data-figure__heading">
+    <p class="data-figure__eyebrow">产业链资金流</p>
+    <h3>$100 的旅程：钱从用户出发，被一层层抽走</h3>
+    <p>示意数字用于解释利润分配结构，并非财务预测。</p>
+  </div>
+  <div class="data-figure__canvas" tabindex="0" aria-label="横向滚动查看完整资金流桑基图">
+    <svg viewBox="0 0 820 380" role="img" aria-labelledby="money-flow-title money-flow-desc">
+      <title id="money-flow-title">LLM 产业链资金流向</title>
+      <desc id="money-flow-desc">用户支付的一百美元依次流入应用、模型、计算和能源层，每一层留下部分利润。</desc>
+    </svg>
+  </div>
+  <figcaption>横向主流越走越细；向下的分支表示各层留下的利润。</figcaption>
+  <noscript>
+    <p class="data-figure__fallback">静态说明：用户支付 $100，应用层留下约 $25，模型层留下约 $15，计算层留下约 $20，能源层及其成本约 $40。</p>
+  </noscript>
+</figure>
+
+<script>
+  import * as d3 from "d3";
+  import { sankey, sankeyJustify, sankeyLinkHorizontal } from "d3-sankey";
+
+  const colors = {
+    user: "#3e332a",
+    app: "#9a4d2e",
+    model: "#b16a42",
+    compute: "#c88a58",
+    energy: "#d8ad79",
+    profit: "#725d4a",
+  };
+
+  document.querySelectorAll<HTMLElement>("[data-money-flow]:not([data-ready])").forEach((root) => {
+    root.dataset.ready = "true";
+    const svg = d3.select(root).select<SVGSVGElement>("svg");
+    const nodes = [
+      { id: "user", name: "用户支付", amount: "$100", kind: "user" },
+      { id: "app", name: "应用层", amount: "$100", kind: "app" },
+      { id: "model", name: "模型层", amount: "$75", kind: "model" },
+      { id: "compute", name: "计算层", amount: "$60", kind: "compute" },
+      { id: "energy", name: "能源与成本", amount: "$40", kind: "energy" },
+      { id: "app-profit", name: "应用利润", amount: "$25", kind: "profit" },
+      { id: "model-profit", name: "模型利润", amount: "$15", kind: "profit" },
+      { id: "compute-profit", name: "计算利润", amount: "$20", kind: "profit" },
+    ];
+    const links = [
+      { source: "user", target: "app", value: 100 },
+      { source: "app", target: "model", value: 75 },
+      { source: "app", target: "app-profit", value: 25 },
+      { source: "model", target: "compute", value: 60 },
+      { source: "model", target: "model-profit", value: 15 },
+      { source: "compute", target: "energy", value: 40 },
+      { source: "compute", target: "compute-profit", value: 20 },
+    ];
+
+    const layout: any = sankey<any, any>()
+      .nodeId((node: any) => node.id)
+      .nodeAlign(sankeyJustify)
+      .nodeWidth(18)
+      .nodePadding(24)
+      .extent([[42, 40], [770, 300]]);
+    const graph: any = layout({ nodes: nodes.map((node) => ({ ...node })), links: links.map((link) => ({ ...link })) });
+
+    svg.append("g")
+      .attr("fill", "none")
+      .selectAll("path")
+      .data(graph.links)
+      .join("path")
+      .attr("d", sankeyLinkHorizontal() as any)
+      .attr("stroke", (link: any) => colors[link.source.kind as keyof typeof colors])
+      .attr("stroke-opacity", 0.28)
+      .attr("stroke-width", (link: any) => Math.max(1, link.width));
+
+    const node = svg.append("g").selectAll("g").data(graph.nodes).join("g");
+    node.append("rect")
+      .attr("x", (item: any) => item.x0)
+      .attr("y", (item: any) => item.y0)
+      .attr("height", (item: any) => Math.max(2, item.y1 - item.y0))
+      .attr("width", (item: any) => item.x1 - item.x0)
+      .attr("rx", 3)
+      .attr("fill", (item: any) => colors[item.kind as keyof typeof colors]);
+    node.append("text")
+      .attr("x", (item: any) => item.x0 < 680 ? item.x0 + 26 : item.x0 - 8)
+      .attr("y", (item: any) => (item.y0 + item.y1) / 2 - 3)
+      .attr("text-anchor", (item: any) => item.x0 < 680 ? "start" : "end")
+      .attr("class", "money-flow__name")
+      .text((item: any) => item.name);
+    node.append("text")
+      .attr("x", (item: any) => item.x0 < 680 ? item.x0 + 26 : item.x0 - 8)
+      .attr("y", (item: any) => (item.y0 + item.y1) / 2 + 15)
+      .attr("text-anchor", (item: any) => item.x0 < 680 ? "start" : "end")
+      .attr("class", "money-flow__amount")
+      .text((item: any) => item.amount);
+  });
+</script>
+
+<style>
+  .data-figure { margin: 2.5rem 0; padding: 1.25rem; border: 1px solid var(--border); background: var(--surface); }
+  .data-figure__heading { text-align: center; }
+  .data-figure__heading h3 { margin: .15rem 0 .35rem; font-size: 1.08rem; }
+  .data-figure__heading p { margin: 0; color: var(--ink-soft); font-size: .82rem; }
+  .data-figure__eyebrow { color: var(--accent) !important; font-size: .72rem !important; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+  .data-figure__canvas { margin-top: 1rem; overflow-x: auto; }
+  svg { display: block; min-width: 680px; width: 100%; height: auto; }
+  :global(.money-flow__name) { fill: var(--ink); font: 600 13px var(--sans); }
+  :global(.money-flow__amount) { fill: var(--accent); font: 700 12px var(--sans); }
+  figcaption, .data-figure__fallback { margin: .75rem 0 0; text-align: center; color: var(--ink-soft); font-size: .78rem; }
+</style>

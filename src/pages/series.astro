@@ -1,0 +1,31 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { SERIES } from "../data/series";
+import { getVisiblePosts } from "../lib/content";
+const posts = await getVisiblePosts();
+---
+<BaseLayout title="专题" description="Ash's Blog 的系列文章与持续写作专题。" canonicalPath="/series.html">
+  <main id="main-content" class="shell">
+    <header class="page-header">
+      <p class="kicker">Series</p>
+      <h1>专题</h1>
+      <p>把一个问题沿着不同侧面写深。专题内文章按阅读顺序排列。</p>
+    </header>
+    <section class="home-section" aria-label="专题列表">
+      <div class="series-grid">
+        {Object.entries(SERIES).map(([slug, series]) => {
+          const count = posts.filter((post) => post.data.series === slug).length;
+          return (
+            <article class="series-card">
+              <span class="series-card__count">{count} 篇 · Series</span>
+              <div>
+                <h3><a href={`/series/${slug}.html`}>{series.title}</a></h3>
+                <p>{series.description}</p>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  </main>
+</BaseLayout>

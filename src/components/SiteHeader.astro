@@ -1,0 +1,29 @@
+---
+interface Props {
+  isHome?: boolean;
+}
+
+const { isHome = false } = Astro.props;
+const path = Astro.url.pathname;
+const nav = [
+  { href: "/", label: "首页", active: path === "/" },
+  { href: "/about.html", label: "关于", active: path.startsWith("/about") },
+];
+---
+<a class="skip-link" href="#main-content">跳到正文</a>
+<header class:list={["site-header", { "site-header--home": isHome }]}>
+  <div class="shell site-header__inner">
+    {isHome ? (
+      <h1 class="site-title"><a href="/">Ash's Blog</a></h1>
+    ) : (
+      <a class="site-title" href="/" aria-label="Ash's Blog 首页">Ash's Blog</a>
+    )}
+    {!isHome && (
+      <nav class="site-nav" aria-label="主导航">
+        {nav.map((item) => (
+          <a href={item.href} aria-current={item.active ? "page" : undefined}>{item.label}</a>
+        ))}
+      </nav>
+    )}
+  </div>
+</header>

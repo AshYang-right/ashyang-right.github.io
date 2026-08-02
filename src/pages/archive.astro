@@ -1,0 +1,35 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { formatDate, getVisiblePosts, postUrl } from "../lib/content";
+
+const posts = await getVisiblePosts();
+const years = new Map<number, typeof posts>();
+for (const post of posts) {
+  const year = post.data.publishedAt.getFullYear();
+  years.set(year, [...(years.get(year) ?? []), post]);
+}
+---
+<BaseLayout title="文章归档" description="Ash's Blog 的全部文章，按发布日期归档。" canonicalPath="/archive.html">
+  <main id="main-content" class="shell">
+    <header class="page-header">
+      <p class="kicker">Archive · {posts.length} essays</p>
+      <h1>文章归档</h1>
+      <p>文章会继续修订，但已经发布的地址不会改变。</p>
+    </header>
+    <div class="archive">
+      {[...years.entries()].map(([year, yearPosts]) => (
+        <section class="archive-group" aria-labelledby={`year-${year}`}>
+          <h2 id={`year-${year}`}>{year}</h2>
+          <ol class="archive-list">
+            {yearPosts.map((post) => (
+              <li>
+                <a href={postUrl(post)}>{post.data.title}</a>
+                <time datetime={post.data.publishedAt.toISOString()}>{formatDate(post.data.publishedAt)}</time>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))}
+    </div>
+  </main>
+</BaseLayout>

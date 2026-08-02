@@ -1,0 +1,35 @@
+---
+import "@fontsource/source-serif-4/400.css";
+import "@fontsource/source-serif-4/600.css";
+import "@fontsource/source-serif-4/700.css";
+import "@fontsource/source-code-pro/400.css";
+import "../styles/global.css";
+import BaseHead from "../components/BaseHead.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  canonicalPath: string;
+  type?: "website" | "article";
+  publishedAt?: Date;
+  updatedAt?: Date;
+}
+
+const props = Astro.props;
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <BaseHead {...props} />
+  </head>
+  <body>
+    <SiteHeader isHome={props.canonicalPath === "/"} />
+    <slot />
+    <SiteFooter />
+    {import.meta.env.PROD && (
+      <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"2fcb844a810945bc8af964a4541996bf"}'></script>
+    )}
+  </body>
+</html>

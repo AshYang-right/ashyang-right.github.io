@@ -1,0 +1,64 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getVisiblePosts, postUrl } from "../lib/content";
+
+const posts = await getVisiblePosts();
+const tags = [...new Set(posts.flatMap((post) => post.data.tags))];
+const isoDate = (date: Date) => date.toISOString().slice(0, 10);
+---
+<BaseLayout
+  title="Ash's Blog"
+  description="写下来是最好的思考方式。关于 AI、系统、产品与那些值得反复琢磨的问题。"
+  canonicalPath="/"
+>
+  <main id="main-content" class="home-index shell">
+    <nav class="tag-filter" aria-label="按标签筛选文章">
+      <button class="tag-filter__button is-active" type="button" data-tag="" aria-pressed="true">全部</button>
+      {tags.map((tag) => (
+        <button class="tag-filter__button" type="button" data-tag={tag} aria-pressed="false">{tag}</button>
+      ))}
+    </nav>
+
+    <div class="header-divider" aria-hidden="true"></div>
+
+    <section class="posts-list" aria-label="文章列表" aria-live="polite">
+      {posts.map((post) => (
+        <article class="post-card" data-tags={JSON.stringify(post.data.tags)}>
+          <h2 class="post-card__title"><a href={postUrl(post)}>{post.data.title}</a></h2>
+          <time class="post-card__date" datetime={isoDate(post.data.publishedAt)}>{isoDate(post.data.publishedAt)}</time>
+          <p class="post-card__summary">{post.data.description}</p>
+          <div class="post-card__tags" aria-label="文章标签">
+            {post.data.tags.map((tag) => <span>{tag}</span>)}
+          </div>
+        </article>
+      ))}
+      <p class="posts-empty" hidden>该标签下暂无文章。</p>
+    </section>
+  </main>
+
+  <script>
+    const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>(".tag-filter__button"));
+    const cards = Array.from(document.querySelectorAll<HTMLElement>(".post-card"));
+    const empty = document.querySelector<HTMLElement>(".posts-empty");
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const activeTag = button.dataset.tag ?? "";
+        buttons.forEach((item) => {
+          const active = item === button;
+          item.classList.toggle("is-active", active);
+          item.setAttribute("aria-pressed", String(active));
+        });
+
+        let visible = 0;
+        cards.forEach((card) => {
+          const cardTags = JSON.parse(card.dataset.tags ?? "[]") as string[];
+          const show = !activeTag || cardTags.includes(activeTag);
+          card.hidden = !show;
+          if (show) visible += 1;
+        });
+        if (empty) empty.hidden = visible !== 0;
+      });
+    });
+  </script>
+</BaseLayout>

@@ -1,0 +1,90 @@
+<figure class="profit-figure" data-profit-chart>
+  <div class="profit-figure__heading">
+    <p>计算层利润分布</p>
+    <h3>上游垄断方拿走了最大的一块</h3>
+  </div>
+  <div class="profit-figure__actions">
+    <button type="button" aria-pressed="false">显示房地产结构参照</button>
+  </div>
+  <div class="profit-figure__charts">
+    <div class="profit-figure__chart">
+      <h4>AI 计算层</h4>
+      <svg viewBox="0 0 340 280" role="img" aria-label="AI 计算层利润分布环形图"></svg>
+    </div>
+    <div class="profit-figure__chart" data-reference hidden>
+      <h4>房地产结构参照</h4>
+      <svg viewBox="0 0 340 280" role="img" aria-label="房地产利润分布环形图"></svg>
+    </div>
+  </div>
+  <figcaption>比例为结构化示意，用于帮助理解文章里的“卖地者”类比。</figcaption>
+  <noscript><p class="profit-figure__fallback">静态说明：AI 计算层的利润大头集中在 GPU 与关键芯片，其次为云服务，服务器组装和数据中心运营所占较小。</p></noscript>
+</figure>
+
+<script>
+  import * as d3 from "d3";
+
+  const palettes = ["#9a4d2e", "#bd744a", "#d39c69", "#7c7469"];
+  const sets = [
+    [
+      { name: "GPU 与关键芯片", value: 55 },
+      { name: "云服务", value: 24 },
+      { name: "服务器组装", value: 12 },
+      { name: "数据中心运营", value: 9 },
+    ],
+    [
+      { name: "土地与财政", value: 52 },
+      { name: "开发商", value: 25 },
+      { name: "金融与中介", value: 14 },
+      { name: "施工与物业", value: 9 },
+    ],
+  ];
+
+  document.querySelectorAll<HTMLElement>("[data-profit-chart]:not([data-ready])").forEach((root) => {
+    root.dataset.ready = "true";
+    root.querySelectorAll<SVGSVGElement>("svg").forEach((element, index) => {
+      const svg = d3.select(element);
+      const group = svg.append("g").attr("transform", "translate(170,138)");
+      const arc = d3.arc<d3.PieArcDatum<(typeof sets)[number][number]>>().innerRadius(58).outerRadius(92);
+      const pie = d3.pie<(typeof sets)[number][number]>().sort(null).value((item) => item.value);
+      const arcs = pie(sets[index]);
+      group.selectAll("path").data(arcs).join("path")
+        .attr("d", arc)
+        .attr("fill", (_, itemIndex) => palettes[itemIndex])
+        .attr("stroke", "#fffcf7")
+        .attr("stroke-width", 2);
+      group.append("text").attr("text-anchor", "middle").attr("y", -2).attr("class", "profit-center").text("100%");
+      group.append("text").attr("text-anchor", "middle").attr("y", 17).attr("class", "profit-center-label").text("利润池");
+      const labels = svg.append("g").attr("transform", "translate(16,242)");
+      const label = labels.selectAll("g").data(sets[index]).join("g").attr("transform", (_, itemIndex) => `translate(${itemIndex % 2 * 165},${Math.floor(itemIndex / 2) * 20})`);
+      label.append("rect").attr("width", 8).attr("height", 8).attr("y", -7).attr("fill", (_, itemIndex) => palettes[itemIndex]);
+      label.append("text").attr("x", 14).attr("class", "profit-label").text((item) => `${item.name} ${item.value}%`);
+    });
+
+    const button = root.querySelector<HTMLButtonElement>("button");
+    const reference = root.querySelector<HTMLElement>("[data-reference]");
+    button?.addEventListener("click", () => {
+      if (!reference) return;
+      const show = reference.hidden;
+      reference.hidden = !show;
+      button.setAttribute("aria-pressed", String(show));
+      button.textContent = show ? "隐藏房地产结构参照" : "显示房地产结构参照";
+    });
+  });
+</script>
+
+<style>
+  .profit-figure { margin: 2.5rem 0; padding: 1.25rem; border: 1px solid var(--border); background: var(--surface); }
+  .profit-figure__heading { text-align: center; }
+  .profit-figure__heading p { margin: 0; color: var(--accent); font: 700 .72rem var(--sans); letter-spacing: .12em; text-transform: uppercase; }
+  .profit-figure__heading h3 { margin: .2rem 0 .65rem; font-size: 1.08rem; }
+  .profit-figure__actions { text-align: center; }
+  button { border: 1px solid var(--border); background: transparent; color: var(--ink); padding: .48rem .75rem; font: 600 .78rem var(--sans); cursor: pointer; }
+  button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  .profit-figure__charts { display: flex; justify-content: center; flex-wrap: wrap; gap: 1rem; margin-top: .7rem; }
+  .profit-figure__chart { flex: 1 1 280px; max-width: 340px; }
+  .profit-figure__chart h4 { margin: .4rem 0 0; text-align: center; font: 600 .78rem var(--sans); }
+  svg { display: block; width: 100%; height: auto; }
+  :global(.profit-center) { fill: var(--ink); font: 700 22px var(--sans); }
+  :global(.profit-center-label), :global(.profit-label) { fill: var(--ink-soft); font: 11px var(--sans); }
+  figcaption, .profit-figure__fallback { margin: .5rem 0 0; text-align: center; color: var(--ink-soft); font-size: .78rem; }
+</style>

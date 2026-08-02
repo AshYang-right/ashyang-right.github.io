@@ -1,0 +1,30 @@
+---
+import { render } from "astro:content";
+import ArticleLayout from "../../layouts/ArticleLayout.astro";
+import { getVisiblePosts } from "../../lib/content";
+
+export async function getStaticPaths() {
+  const posts = await getVisiblePosts();
+  return posts.map((post) => ({ params: { slug: post.data.slug }, props: { post, posts } }));
+}
+
+const { post, posts } = Astro.props;
+const { Content, headings } = await render(post);
+let previous;
+let next;
+if (post.data.series) {
+  const seriesPosts = posts
+    .filter((item) => item.data.series === post.data.series)
+    .sort((a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0));
+  const index = seriesPosts.findIndex((item) => item.id === post.id);
+  previous = seriesPosts[index - 1];
+  next = seriesPosts[index + 1];
+} else {
+  const index = posts.findIndex((item) => item.id === post.id);
+  previous = posts[index + 1];
+  next = posts[index - 1];
+}
+---
+<ArticleLayout {post} {headings} {previous} {next}>
+  <Content />
+</ArticleLayout>

@@ -1,0 +1,45 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PostMeta from "../../components/PostMeta.astro";
+import { SERIES, type SeriesSlug } from "../../data/series";
+import { getVisiblePosts, postUrl } from "../../lib/content";
+
+export async function getStaticPaths() {
+  const posts = await getVisiblePosts();
+  return Object.entries(SERIES).map(([slug, series]) => ({
+    params: { series: slug },
+    props: {
+      slug: slug as SeriesSlug,
+      series,
+      posts: posts
+        .filter((post) => post.data.series === slug)
+        .sort((a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0)),
+    },
+  }));
+}
+
+const { slug, series, posts } = Astro.props;
+---
+<BaseLayout title={series.title} description={series.description} canonicalPath={`/series/${slug}.html`}>
+  <main id="main-content" class="shell">
+    <header class="page-header">
+      <p class="kicker">Series · {posts.length} essays</p>
+      <h1>{series.title}</h1>
+      <p>{series.description}</p>
+    </header>
+    <section class="home-section" aria-label={`${series.shortTitle}文章列表`}>
+      <div class="post-list">
+        {posts.map((post) => (
+          <article class="post-row">
+            <span class="post-row__number">{String(post.data.seriesOrder).padStart(2, "0")}</span>
+            <div>
+              <h3><a href={postUrl(post)}>{post.data.title}</a></h3>
+              <PostMeta date={post.data.publishedAt} tags={post.data.tags.slice(0, 2)} />
+            </div>
+            <p>{post.data.description}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  </main>
+</BaseLayout>

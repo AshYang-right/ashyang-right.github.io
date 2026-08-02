@@ -1,0 +1,61 @@
+---
+import type { BlogPost } from "../lib/content";
+import { formatDate, postUrl, tagSlug } from "../lib/content";
+import BaseLayout from "./BaseLayout.astro";
+import ArticleToc from "../components/ArticleToc.astro";
+import ReadingProgress from "../components/ReadingProgress.astro";
+
+interface Heading { depth: number; slug: string; text: string; }
+interface Props {
+  post: BlogPost;
+  headings: Heading[];
+  previous?: BlogPost;
+  next?: BlogPost;
+}
+
+const { post, headings, previous, next } = Astro.props;
+const { data } = post;
+const articleDate = `${data.publishedAt.getFullYear()} 年 ${data.publishedAt.getMonth() + 1} 月 ${data.publishedAt.getDate()} 日`;
+---
+<BaseLayout
+  title={data.title}
+  description={data.description}
+  canonicalPath={postUrl(post)}
+  type="article"
+  publishedAt={data.publishedAt}
+  updatedAt={data.updatedAt}
+>
+  <ReadingProgress />
+  <main id="main-content" class="article-shell">
+    <header class="article-header">
+      <time class="article-date" datetime={data.publishedAt.toISOString()}>{articleDate}</time>
+      <h1>{data.title}</h1>
+      <div class="article-tags" aria-label="文章标签">
+        {data.tags.map((tag) => <a href={`/tags/${tagSlug(tag)}.html`}>{tag}</a>)}
+      </div>
+    </header>
+    <ArticleToc headings={headings} />
+    <article class="article-content">
+      <slot />
+    </article>
+    <footer class="article-end">
+      {(previous || next) && (
+        <nav class="article-nav" aria-label="文章前后篇">
+          {previous ? (
+            <a href={postUrl(previous)}>
+              <span class="article-nav__label">上一篇</span>
+              <strong>{previous.data.title}</strong>
+            </a>
+          ) : <span></span>}
+          {next && (
+            <a href={postUrl(next)}>
+              <span class="article-nav__label">下一篇</span>
+              <strong>{next.data.title}</strong>
+            </a>
+          )}
+        </nav>
+      )}
+      <p class="post-meta" style="margin-top: 26px;">发布于 {formatDate(data.publishedAt)}{data.updatedAt ? ` · 更新于 ${formatDate(data.updatedAt)}` : ""}</p>
+    </footer>
+  </main>
+</BaseLayout>

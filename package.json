@@ -1,0 +1,30 @@
+{
+  "name": "ashyang-right-blog",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "new:post": "node scripts/new-post.mjs",
+    "check": "astro check && node scripts/verify-content.mjs",
+    "build": "astro check && astro build && node scripts/verify-build.mjs",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "latest",
+    "@astrojs/rss": "latest",
+    "@astrojs/sitemap": "latest",
+    "@fontsource/source-code-pro": "latest",
+    "@fontsource/source-serif-4": "latest",
+    "astro": "latest",
+    "d3": "latest",
+    "d3-sankey": "latest"
+  },
+  "devDependencies": {
+    "@astrojs/check": "latest",
+    "@astrojs/markdown-remark": "latest",
+    "@types/d3": "latest",
+    "@types/d3-sankey": "latest",
+    "typescript": "latest"
+  }
+}
