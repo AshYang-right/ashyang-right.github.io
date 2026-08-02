@@ -9,7 +9,7 @@ tags:
   - 技术策划
 slug: natural-follow-behavior-design
 featured: false
-draft: true
+draft: false
 ---
 
 对跟随系统而言，玩家的行为是一组无法预先控制的外部输入。玩家何时起步、向哪里移动、什么时候加速、转向或者停止，都不由跟随系统决定。因此，我们真正能够优化的不是玩家的行为，而是 AI NPC 面对这些变化时所呈现出来的跟随表现。
