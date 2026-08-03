@@ -1546,6 +1546,25 @@ textarea {
   background: var(--accent-soft);
 }
 
+.article-content .article-video {
+  margin: 28px 0;
+}
+
+.article-content .article-video video {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #000;
+}
+
+.article-content .article-video figcaption {
+  margin-top: 10px;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  line-height: 1.65;
+  text-align: center;
+}
+
 .article-end {
   grid-column: 2;
 }
