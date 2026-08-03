@@ -79,7 +79,10 @@ draft: false
 
 这些随运动状态连续变化的理想站位，在玩家身后共同形成一个扇形。
 
-> 【待补图】扇形总图：玩家居中面朝上方，身后画出 `θ_side = 75°`、`Min`–`Max` 的扇形，标注中轴、左右侧后区；配“低速 / 追赶 / 收尾”三张小图表现扇形的收拢与展开，小黑站在侧后方。
+<figure>
+  <img src="/images/natural-follow-behavior-design/03-breathing-fan-model.png" alt="玩家面朝上方时，NPC 小黑在身后的扇形区域内移动；低速时扇形展开至侧后方，追赶时向中轴收拢，收尾时再次展开" loading="lazy" decoding="async" />
+  <figcaption>会“呼吸”的扇形：低速展开至侧后方，追赶时收向中轴，减速后再展开回来。</figcaption>
+</figure>
 
 距离同样不是定值：NPC 可以在最小距离 `Min` 和最大距离 `Max` 之间，根据当前速度和追赶状态调整远近。为了制作 Demo，我先取 `θ_side = 75°`、`Max = 5m`，得到一个总角度 `150°` 的扇形；这些只是演示参数，实际项目中可以按玩家速度、角色体型、人物关系和表演需求调整。
 
@@ -103,7 +106,10 @@ draft: false
 
 行为学实验也观察到了类似的滞后：在一项直线行人跟随实验中，领路者改变速度后，跟随者加速度变化的平均延迟约为 `420ms`。这说明“玩家先动、NPC 稍后响应”有现实依据，但 `420ms` 不能直接搬进游戏，实际取值仍要服从角色响应感、移动速度和动画节奏。[行人跟随中的速度视觉控制研究](https://pmc.ncbi.nlm.nih.gov/articles/PMC3919103/) 这里的取舍是：`τ` 越长越从容，也越容易掉队——这个矛盾的另一半，由下面的安全通道解决。
 
-> 【待补图】延迟时序曲线：同一横轴上画出玩家速度曲线与 NPC 速度曲线，标注起步处的 `τ`、追赶段的超调和停止段的收敛。
+<figure>
+  <img src="/images/natural-follow-behavior-design/04-reaction-delay-curve.png" alt="玩家速度先上升，NPC 速度经过反应延迟后才开始上升，并在追赶阶段短暂超过玩家速度，最后比玩家更晚收敛到零" loading="lazy" decoding="async" />
+  <figcaption>反应延迟不是停顿：NPC 晚 `τ` 起步，随后通过追赶追回距离，并在玩家停止后平滑收敛。</figcaption>
+</figure>
 
 工程上还要区分三个时间概念，避免它们被简单相加成一段漫长的等待：
 
@@ -187,7 +193,10 @@ Pₐ(t + Δt) = Pₐ(t) + Vₐ × Δt
 
 其中 `React` 的进入条件“玩家移动意图得到确认”，对应的就是第 3.1 节的移动确认时间：用它来过滤摇杆误触和短暂微调，避免 NPC 一惊一乍。
 
-> 【待补图】状态机图：六个状态节点与转换箭头（含“任意状态 → Recover”的兜底边），替换文字版转换列表。
+<figure>
+  <img src="/images/natural-follow-behavior-design/05-follow-state-machine.png" alt="NPC 跟随状态机：Idle 经 React 进入 Follow，Follow 可切换至 CatchUp 或 Settle，任意状态都可进入 Recover，恢复后返回 Follow" loading="lazy" decoding="async" />
+  <figcaption>行为树只切换跟随意图：小黑在 `Follow` 道岔上选择追赶或收尾，异常情况统一落入 `Recover`。</figcaption>
+</figure>
 
 这些状态不直接设置 NPC 的位置或速度，只切换当前的跟随意图与参数上限；具体运动仍然由目标生成和加速度控制完成。
 
@@ -200,7 +209,10 @@ Pₐ(t + Δt) = Pₐ(t) + Vₐ × Δt
 3. **转弯（验收③）**：扇形随玩家的延迟朝向旋转，NPC 向新扇形内最近的合理位置过渡，顺势换侧而不绕行——不抢戏、不绕到玩家面前。
 4. **停止（验收①②）**：玩家停下，NPC 进入 `Settle`，在连续减速的同时展开回侧后方，最后落定在稳定站位——站位可预期，不忽近忽远。
 
-> 【待补图】走查轨迹俯视图：玩家“起步—加速—转弯—停止”的轨迹与 NPC 轨迹叠加，在四个关键时刻标注系统状态。
+<figure>
+  <img src="/images/natural-follow-behavior-design/06-follow-trajectory-walkthrough.png" alt="俯视轨迹中，玩家依次起步、加速、转弯和停止；NPC 小黑延迟起步，追赶时靠近中轴，转弯时选择更自然的新路径，最后停在玩家侧后方" loading="lazy" decoding="async" />
+  <figcaption>一次完整走查：NPC 不复刻玩家轨迹，而是在 `React`、`CatchUp`、`Follow` 与 `Settle` 中连续调整。</figcaption>
+</figure>
 
 用这套模型回看开头视频里的出戏瞬间：起停像指令，对应缺失的反应延迟与减速收敛；站位忽近忽远，对应缺失的容差与理想站位调度。它们正是本文试图解决的三类问题。
 
