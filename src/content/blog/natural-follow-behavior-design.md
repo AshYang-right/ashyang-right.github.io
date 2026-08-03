@@ -26,6 +26,17 @@ draft: false
 
 这些问题不是单纯调高移动速度或缩短跟随距离就能解决的。对跟随系统而言，玩家的行为是一组无法预先控制的外部输入。玩家何时起步、向哪里移动、什么时候加速、转向或停止，都不由跟随系统决定。我们真正能够优化的，是 AI NPC 面对这些变化时所呈现出来的跟随表现。
 
+<div class="article-image-pair">
+  <figure>
+    <img src="/images/natural-follow-behavior-design/clumsy-follow-machine.png" alt="NPC 驾驶只有速度和距离旋钮的跟随机器，虽然跟得上玩家，动作却仍然生硬" loading="lazy" decoding="async" />
+    <figcaption>机械式跟随：功能上跟得上，表现上却仍然生硬。</figcaption>
+  </figure>
+  <figure>
+    <img src="/images/natural-follow-behavior-design/graceful-kite-follow.png" alt="玩家牵着风筝前行，NPC 小黑固定在风筝上自然滑行" loading="lazy" decoding="async" />
+    <figcaption>理想跟随：像放风筝一样保持联系，同时自然、流畅、优雅。</figcaption>
+  </figure>
+</div>
+
 自然跟随的目标并不是让 AI 精确复制玩家的移动，而是让 AI 在玩家不可预测的行为下，持续维持一种合理、可恢复的空间关系。
 
 在讨论具体规则前，首先需要明确一件事：**谁跟随谁？** 跟随关系可以分成两种：玩家跟随 AI，以及 AI 跟随玩家。两种关系的设计目标并不相同。
