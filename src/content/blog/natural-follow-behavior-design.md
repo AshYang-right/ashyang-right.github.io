@@ -142,24 +142,13 @@ NPC 每次转弯后都重新选择站位，不去复现玩家刚才走过的路�
 
 一次小幅过冲可以保留，反复折返则要避免。速度和加速度仍需设上限，也要给 NPC 留出足够的减速空间。[Time-delayed Follow-the-Leader model](https://www.aimsciences.org/article/doi/10.3934/nhm.2015.10.579)
 
-## 5. 整合：优先级与行为树
+## 5. 整合：跟随状态机
 
-多个目标冲突时，需要先决定什么更重要：**保证跟得上 > 回到扇形范围 > 收敛到当前状态的理想角度 > 停止后整理回侧后方**。
-
-行为树只决定 NPC 当前想做什么，以及各状态下可以跑多快。具体怎么起步、转弯和停下，仍由第 4 节的平滑运动处理。这样状态可以明确切换，动作却不会跟着突然跳变。
-
-| 状态 | 进入条件 | 当前意图 |
-| --- | --- | --- |
-| `Idle` | 玩家与 NPC 均已静止 | 保持静止偏好站位 |
-| `React` | 玩家移动意图得到确认 | 等待反应延迟并准备起步 |
-| `Follow` | 反应延迟结束 | 根据当前速度调整扇形内的理想角度与距离 |
-| `CatchUp` | 当前真实距离超过 `Max` | 提高速度和加速度，并让目标角度向中轴收拢 |
-| `Settle` | 玩家停止，而 NPC 尚未完成收尾 | 逐渐减速，并把目标位置展开回侧后方 |
-| `Recover` | 距离或导航状态进入恢复阈值 | 使用项目定义的方式恢复跟随关系 |
+状态机负责切换 NPC 的跟随意图，具体怎么起步、转弯和停下，仍由第 4 节的平滑运动处理。
 
 <figure>
-  <img src="/images/natural-follow-behavior-design/05-follow-state-machine.png" alt="NPC 跟随状态机：Idle 经 React 进入 Follow，Follow 可切换至 CatchUp 或 Settle，任意状态都可进入 Recover，恢复后返回 Follow" loading="lazy" decoding="async" />
-  <figcaption>行为树只切换跟随意图：小黑在 `Follow` 道岔上选择追赶或收尾，异常情况统一落入 `Recover`。</figcaption>
+  <img src="/images/natural-follow-behavior-design/05-follow-state-machine.svg" alt="NPC 跟随状态机：Idle 经 React 进入 Follow；距离过远时进入 CatchUp，玩家停止时进入 Settle；任意状态发生异常时进入 Recover，恢复后返回 Follow" loading="lazy" decoding="async" />
+  <figcaption>跟随状态机：主流程保持简单，追赶和异常恢复从普通跟随中分支处理。</figcaption>
 </figure>
 
 ## 小结

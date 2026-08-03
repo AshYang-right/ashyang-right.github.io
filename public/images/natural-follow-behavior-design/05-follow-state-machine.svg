@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 800" role="img" aria-labelledby="title desc">
+  <title id="title">NPC 跟随状态机</title>
+  <desc id="desc">Idle 经 React 进入 Follow。Follow 可在距离过远时进入 CatchUp，在玩家停止时进入 Settle。任意状态遇到异常时进入 Recover，恢复后返回 Follow。</desc>
+
+  <defs>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#303640" stroke-width="1" opacity="0.52"/>
+    </pattern>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#000000" flood-opacity="0.34"/>
+    </filter>
+    <filter id="active-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#2688ff" flood-opacity="0.38"/>
+    </filter>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#aeb8c6"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#2688ff"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#ff8a3d"/>
+    </marker>
+    <style>
+      .edge { fill: none; stroke: #aeb8c6; stroke-width: 3; marker-end: url(#arrow); }
+      .edge-blue { fill: none; stroke: #2688ff; stroke-width: 3; marker-end: url(#arrow-blue); }
+      .edge-orange { fill: none; stroke: #ff8a3d; stroke-width: 3; marker-end: url(#arrow-orange); }
+      .edge-dashed { stroke-dasharray: 10 9; }
+      .edge-label { fill: #c6cdd7; font: 500 20px "Segoe UI", "Microsoft YaHei", sans-serif; paint-order: stroke; stroke: #191d23; stroke-width: 7; stroke-linejoin: round; }
+      .node { fill: #262b33; stroke: #707987; stroke-width: 2; rx: 8; }
+      .node-active { fill: #242d39; stroke: #2688ff; stroke-width: 3; rx: 8; }
+      .node-recover { fill: #302a28; stroke: #ff8a3d; stroke-width: 2.5; rx: 8; }
+      .header { fill: #313741; }
+      .header-active { fill: #1f5fa9; }
+      .header-recover { fill: #934d25; }
+      .node-title { fill: #f4f7fb; font: 500 27px "Segoe UI", sans-serif; }
+      .node-subtitle { fill: #b9c1cc; font: 400 19px "Segoe UI", "Microsoft YaHei", sans-serif; }
+      .port { fill: #15181d; stroke: #87919f; stroke-width: 2; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="800" fill="#191d23"/>
+  <rect width="1440" height="800" fill="url(#grid)"/>
+
+  <!-- Transitions -->
+  <path class="edge" d="M88 390 H128"/>
+  <path class="edge" d="M308 390 H378"/>
+  <text class="edge-label" x="343" y="310" text-anchor="middle">移动确认</text>
+
+  <path class="edge" d="M578 390 H678"/>
+  <text class="edge-label" x="628" y="310" text-anchor="middle">延迟结束</text>
+
+  <path class="edge-blue" d="M898 348 C946 310 972 260 1000 222"/>
+  <text class="edge-label" x="941" y="280" text-anchor="middle">距离过远</text>
+
+  <path class="edge" d="M1000 174 C936 185 912 270 884 320"/>
+  <text class="edge-label" x="920" y="202" text-anchor="middle">回到范围</text>
+
+  <path class="edge-blue" d="M720 460 C683 505 600 536 546 562"/>
+  <text class="edge-label" x="650" y="512" text-anchor="middle">玩家停止</text>
+
+  <path class="edge" d="M400 616 C315 659 199 581 217 450"/>
+  <text class="edge-label" x="280" y="618" text-anchor="middle">站位稳定</text>
+
+  <path class="edge-orange" d="M1008 550 C957 508 915 472 860 455"/>
+  <text class="edge-label" x="951" y="493" text-anchor="middle">恢复成功</text>
+
+  <g>
+    <rect x="684" y="684" width="190" height="48" rx="24" fill="#272a31" stroke="#ff8a3d" stroke-width="2" stroke-dasharray="8 7"/>
+    <text x="779" y="716" text-anchor="middle" fill="#f1c3a7" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="20" font-weight="500">任意状态异常</text>
+    <path class="edge-orange edge-dashed" d="M874 708 C926 704 958 675 1000 638"/>
+  </g>
+
+  <!-- Entry -->
+  <circle cx="70" cy="390" r="18" fill="#2688ff"/>
+  <circle cx="70" cy="390" r="8" fill="#dcecff"/>
+
+  <!-- Idle -->
+  <g filter="url(#shadow)">
+    <rect class="node" x="128" y="330" width="180" height="120"/>
+    <path class="header" d="M136 330 H300 Q308 330 308 338 V373 H128 V338 Q128 330 136 330 Z"/>
+    <text class="node-title" x="218" y="361" text-anchor="middle">Idle</text>
+    <text class="node-subtitle" x="218" y="416" text-anchor="middle">保持侧后站位</text>
+    <circle class="port" cx="128" cy="390" r="6"/>
+    <circle class="port" cx="308" cy="390" r="6"/>
+  </g>
+
+  <!-- React -->
+  <g filter="url(#shadow)">
+    <rect class="node" x="378" y="330" width="200" height="120"/>
+    <path class="header" d="M386 330 H570 Q578 330 578 338 V373 H378 V338 Q378 330 386 330 Z"/>
+    <text class="node-title" x="478" y="361" text-anchor="middle">React</text>
+    <text class="node-subtitle" x="478" y="416" text-anchor="middle">等待反应延迟</text>
+    <circle class="port" cx="378" cy="390" r="6"/>
+    <circle class="port" cx="578" cy="390" r="6"/>
+  </g>
+
+  <!-- Follow -->
+  <g filter="url(#active-glow)">
+    <rect class="node-active" x="678" y="320" width="220" height="140"/>
+    <path class="header-active" d="M686 320 H890 Q898 320 898 328 V368 H678 V328 Q678 320 686 320 Z"/>
+    <text class="node-title" x="788" y="354" text-anchor="middle">Follow</text>
+    <text class="node-subtitle" x="788" y="414" text-anchor="middle">维持动态扇形站位</text>
+    <circle cx="678" cy="390" r="6" fill="#162a40" stroke="#66adff" stroke-width="2"/>
+    <circle cx="898" cy="348" r="6" fill="#162a40" stroke="#66adff" stroke-width="2"/>
+    <circle cx="720" cy="460" r="6" fill="#162a40" stroke="#66adff" stroke-width="2"/>
+    <circle cx="860" cy="455" r="6" fill="#162a40" stroke="#66adff" stroke-width="2"/>
+  </g>
+
+  <!-- CatchUp -->
+  <g filter="url(#shadow)">
+    <rect class="node" x="1000" y="110" width="230" height="130"/>
+    <path class="header" d="M1008 110 H1222 Q1230 110 1230 118 V153 H1000 V118 Q1000 110 1008 110 Z"/>
+    <text class="node-title" x="1115" y="141" text-anchor="middle">CatchUp</text>
+    <text class="node-subtitle" x="1115" y="190" text-anchor="middle">加速追赶</text>
+    <text class="node-subtitle" x="1115" y="216" text-anchor="middle">目标收向中轴</text>
+    <circle class="port" cx="1000" cy="174" r="6"/>
+    <circle class="port" cx="1000" cy="222" r="6"/>
+  </g>
+
+  <!-- Settle -->
+  <g filter="url(#shadow)">
+    <rect class="node" x="400" y="550" width="230" height="130"/>
+    <path class="header" d="M408 550 H622 Q630 550 630 558 V593 H400 V558 Q400 550 408 550 Z"/>
+    <text class="node-title" x="515" y="581" text-anchor="middle">Settle</text>
+    <text class="node-subtitle" x="515" y="630" text-anchor="middle">逐渐减速</text>
+    <text class="node-subtitle" x="515" y="656" text-anchor="middle">回到侧后方</text>
+    <circle class="port" cx="546" cy="562" r="6"/>
+    <circle class="port" cx="400" cy="616" r="6"/>
+  </g>
+
+  <!-- Recover -->
+  <g filter="url(#shadow)">
+    <rect class="node-recover" x="1000" y="550" width="230" height="130"/>
+    <path class="header-recover" d="M1008 550 H1222 Q1230 550 1230 558 V593 H1000 V558 Q1000 550 1008 550 Z"/>
+    <text class="node-title" x="1115" y="581" text-anchor="middle">Recover</text>
+    <text class="node-subtitle" x="1115" y="638" text-anchor="middle">恢复跟随关系</text>
+    <circle cx="1008" cy="550" r="6" fill="#3b2118" stroke="#ffad78" stroke-width="2"/>
+    <circle cx="1000" cy="638" r="6" fill="#3b2118" stroke="#ffad78" stroke-width="2"/>
+  </g>
+</svg>
