@@ -9,7 +9,6 @@ const required = [
   "archive.html",
   "series.html",
   "series/intelligent-npc.html",
-  "series/xiuxian-world-v2.html",
   "rss.xml",
   "sitemap-index.xml",
   "robots.txt",
