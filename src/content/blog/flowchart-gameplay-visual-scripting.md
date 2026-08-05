@@ -9,7 +9,7 @@ tags:
   - 可视化编程
 slug: flowchart-gameplay-visual-scripting
 featured: false
-draft: true
+draft: false
 ---
 
 2022 年，我在《逆水寒》项目实习，第一次长期使用 Asyncflow。几年过去，它仍然是我用过最好的策划可视化工具：清楚、直观、上手快，又没有牺牲对逻辑细节的控制。
