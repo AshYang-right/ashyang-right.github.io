@@ -1,7 +1,7 @@
 ---
 title: "让 NPC 跟随得更自然（上）：第三人称 RPG 的跟随行为设计"
 description: "研究玩家作为被跟随方时，第三人称 RPG 如何通过站位、反应延迟与运动控制改善 NPC 的跟随表现。"
-publishedAt: 2026-08-02
+publishedAt: 2026-06-11
 tags:
   - NPC
   - 游戏开发
