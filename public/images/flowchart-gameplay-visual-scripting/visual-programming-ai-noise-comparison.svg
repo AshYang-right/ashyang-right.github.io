@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="680" viewBox="0 0 1600 680" role="img" aria-labelledby="title desc">
+  <title id="title">蓝图节点文本与 Asyncflow 生成 Lua 对比</title>
+  <desc id="desc">左侧展示蓝图节点文本节选，右侧展示 Asyncflow 生成的 Lua。</desc>
+
+  <style>
+    .cn { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+    .mono { font-family: Consolas, "SFMono-Regular", monospace; }
+  </style>
+
+  <rect width="1600" height="680" fill="#f6f8fb"/>
+
+  <rect x="70" y="55" width="700" height="570" rx="20" fill="#111b2e"/>
+  <circle cx="112" cy="108" r="16" fill="#3b82f6"/>
+  <text x="145" y="118" class="cn" fill="#dbeafe" font-size="30" font-weight="800">蓝图节点文本（节选）</text>
+  <line x1="100" y1="150" x2="740" y2="150" stroke="#324056" stroke-width="2"/>
+  <text x="118" y="210" class="mono" fill="#dce7f5" font-size="25">
+    <tspan x="118" dy="0">Begin Object Class=K2Node_IfThenElse</tspan>
+    <tspan x="118" dy="51" fill="#fda4af">  NodeGuid=9C8F...</tspan>
+    <tspan x="118" dy="51" fill="#fda4af">  NodePosX=320  NodePosY=128</tspan>
+    <tspan x="118" dy="51" fill="#fda4af">  PinId=1A7...  PinName="Condition"</tspan>
+    <tspan x="118" dy="51" fill="#fda4af">  LinkedTo=(K2Node_CallFunction_0 ...)</tspan>
+    <tspan x="118" dy="51">End Object</tspan>
+    <tspan x="118" dy="51" fill="#94a3b8">...HealthRatio / Less / EnterPhase 节点</tspan>
+  </text>
+
+  <rect x="830" y="55" width="700" height="570" rx="20" fill="#10251b"/>
+  <circle cx="872" cy="108" r="16" fill="#22c55e"/>
+  <text x="905" y="118" class="cn" fill="#dcfce7" font-size="30" font-weight="800">Asyncflow 生成 Lua</text>
+  <line x1="860" y1="150" x2="1500" y2="150" stroke="#315141" stroke-width="2"/>
+  <text x="894" y="310" class="mono" fill="#dff7e6" font-size="30">
+    <tspan x="894" dy="0">if self:HealthRatio() &lt; 0.3 then</tspan>
+    <tspan x="894" dy="68">  self:EnterPhase(2)</tspan>
+    <tspan x="894" dy="68">end</tspan>
+  </text>
+</svg>

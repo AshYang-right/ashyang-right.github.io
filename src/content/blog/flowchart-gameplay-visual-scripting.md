@@ -129,25 +129,21 @@ Asyncflow 用事件来处理这种关系。项目版里有 `Send Event To` 和 `
 
 ## AI 时代重新看 Asyncflow
 
-AI 正在改变可视化编程工具原本成立的前提。过去，我们需要把代码变成节点，是因为很多内容策划不擅长写脚本；但如果目标只是把一段已经想清楚的逻辑变成 Lua 或 C#，今天的 AI 往往可以直接写代码，而且比人逐个拖动节点更快。
+AI 让图形化编辑的前提发生了变化。过去，我们把代码变成节点，是为了降低策划写脚本的门槛；现在，如果逻辑已经想清楚，AI 直接写 Lua 或 C# 往往更快。
 
-任何可视化工具都会有这个问题。只要让 AI 直接生成或修改一张图，它就必须知道有哪些节点、节点怎样连接，有时还要处理位置和布局。Asyncflow 也不例外，它的流程图数据同样包含节点 UID 和连线关系。与直接写代码相比，这些都是额外信息。
+所以，蓝图、Asyncflow 这类工具都会遇到同一个问题：图形数据除了玩法逻辑，还包含节点、连线以及编辑器信息。区别首先在于噪声有多少。蓝图还要处理输入输出引脚、类型、默认值、GUID 和布局；Asyncflow 的结构更薄，YAML 主要记录节点和控制流关系。
 
-真正的差别在于图结构有多厚。蓝图中的一个节点不只代表一次函数调用，还可能带有大量输入、输出引脚，以及每个引脚的类型、默认值、连接对象和显示状态。AI 想修改一条逻辑，不仅要理解节点，还要在正确的引脚之间建立连接。再加上节点 GUID、坐标和编辑器状态，一张对人很直观的图，被完整展开成文本后可能变得非常庞大。
-
-这些信息里，有些是恢复图资产所必需的，却未必有助于理解玩法逻辑。把完整数据全部交给 AI，会让有限的上下文迅速被布局和编辑器信息占满；为了节省上下文而先做压缩，又可能丢失某个默认值、隐藏引脚或边缘分支。AI 看到的要么是一大团噪音，要么是一张缺少细节的摘要，幻觉和错误都会随之增加。
-
-<figure>
-  <img src="/images/flowchart-gameplay-visual-scripting/blueprint-ai-context-noise.png" alt="蓝图结构转成文本后，GUID、节点坐标和编辑器状态等元数据会增加 AI 上下文噪音的示意图" loading="lazy" decoding="async" />
-  <figcaption>蓝图是图结构膨胀后产生信息过载的典型例子。图中的文件大小和 Token 数量用于说明问题，不代表所有项目的统一实测结果。</figcaption>
+<figure class="article-figure-wide">
+  <a href="/images/flowchart-gameplay-visual-scripting/visual-programming-ai-noise-comparison.svg" target="_blank" rel="noopener noreferrer">
+    <img src="/images/flowchart-gameplay-visual-scripting/visual-programming-ai-noise-comparison.svg" alt="蓝图节点文本节选与 Asyncflow 生成 Lua 的并排对比" width="1600" height="680" loading="lazy" decoding="async" />
+  </a>
+  <figcaption>同一段逻辑在两种 AI 可读文本中的结构示意。Asyncflow 的 YAML 同样包含 UID 和连线；这里比较的是 AI 读取逻辑时最直接可用的文本入口，而不是完整编辑成本。点击图片可查看原图。</figcaption>
 </figure>
 
-Asyncflow 也有图结构噪音。其使用 YAML 保存数据，每个节点都有 UID，连线则记录起点、终点和分支类型。不过，它没有蓝图那套复杂的输入、输出引脚，AI 需要处理的额外信息会少很多。
+第二个区别在于读取路径。实际协作中，大部分工作不是让 AI 拖节点，而是让它理解逻辑、检查分支、定位问题和补充方法。Asyncflow 可以把流程图生成成一份干净的 Lua，AI 直接阅读这份文本就能完成这些工作，不必先解析图资产。
 
-蓝图本质上也是代码的可视化表示。[Blueprint Graph 会被编译成虚拟机字节码](https://dev.epicgames.com/documentation/en-us/unreal-engine/blueprint-compiler-overview?application_version=4.27)，Unreal 也支持[用文本导入、导出节点](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Editor/UnrealEd/FEdGraphUtilities)。区别主要在文件格式。蓝图平时保存在[专用的 `.uasset` 文件](https://dev.epicgames.com/documentation/en-us/unreal-engine/working-with-assets-in-unreal-engine)里，导出的文本仍要描述完整的引脚和连接。Asyncflow 的流程图是 YAML，生成结果则是[可以直接阅读的 Lua](https://github.com/fuxi-asyncflow/asyncflow/blob/main/test/flowchart/generate/AI.lua)。
+AI 时代到来后，我重新开始寻找更适合人与模型协作的工具和工作流。没想到兜兜转转，最后找到的，竟然还是几年前我用得最多、也最熟悉的 Asyncflow。
 
-更重要的是，它保留了从流程图到纯文本的清晰路径：如果只是理解逻辑、检查分支或者编写节点方法，AI 可以直接阅读 YAML 和 Lua，不必操作编辑器。这让 Asyncflow 不只是更适合 AI 读取，也更适合人和 AI 分工协作。
-
-策划仍然在流程图里工作，AI 则处理文本。这是我认为 Asyncflow 更适合 AI 协作的地方。
+它当然不是为 AI 设计的，但当年那些关于图、代码和协作的取舍，却意外地适应了今天。技术向前走了一大圈，我也绕了一圈，最后又回到这个工具面前。这大概就是我重新写下这篇文章时，最唏嘘的地方。
 
 > P.S.：据我了解，《逆水寒》手游现在采用的方式是让模型直接编写 Lua，再把代码转成流程图。AI 操作代码，策划阅读和调整流程图，双方使用的是同一份逻辑数据。这样，人和 AI 可以在各自熟悉的界面里协作，实际用起来非常方便。
