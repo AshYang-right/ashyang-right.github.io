@@ -1568,7 +1568,9 @@ textarea {
 }
 
 .article-content > figure:not(.article-video) img {
+  display: block;
   width: 100%;
+  height: auto;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: #fff;
@@ -1587,7 +1589,9 @@ textarea {
 }
 
 .article-content .article-image-pair img {
+  display: block;
   width: 100%;
+  height: auto;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: #fff;
