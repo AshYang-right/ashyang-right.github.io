@@ -1552,6 +1552,11 @@ textarea {
   margin: 28px auto;
 }
 
+.article-content > figure.article-figure-wide {
+  width: 100%;
+  max-width: none;
+}
+
 .article-content .article-video video {
   width: 100%;
   border: 1px solid var(--border);

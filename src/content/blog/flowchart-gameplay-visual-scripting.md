@@ -76,11 +76,23 @@ Asyncflow 能处理的不只是几段简单的条件判断。同一套流程图�
 
 这些逻辑直接写成脚本，很快就会形成多层条件和回调。放进流程图后，可以先把不同阶段拆成几条主路径，再用条件线决定 Boss 此刻应该近战、追击、释放远程技能还是进入特殊机制。技能结束、动画完成或 Boss 被打断时，再通过事件回到对应的决策位置。
 
-策划看到的不再是一堆分散在代码里的判断，而是一张能够顺着执行路径阅读的行为树。哪一个血量节点进入二阶段、什么距离优先冲锋、技能被打断后是否立刻补一次攻击，都可以直接在图上调整。开发只需要提供移动、选取目标、释放技能等底层方法，Boss 怎样组合这些能力则由策划自己控制。
+<figure class="article-figure-wide">
+  <a href="/images/flowchart-gameplay-visual-scripting/boss-behavior-tree-overview.png" target="_blank" rel="noopener noreferrer">
+    <img src="/images/flowchart-gameplay-visual-scripting/boss-behavior-tree-overview.png" alt="复杂 Boss 行为树示例，主决策根据目标状态和血量进入三个战斗阶段，并并行监听技能打断、召唤物死亡和目标丢失事件" width="2313" height="780" loading="lazy" decoding="async" />
+  </a>
+  <figcaption>复杂 Boss 行为树示例。流程图数据按 Asyncflow 的项目格式编写；图中的前端界面是为本文临时制作的渲染版本，并非公开编辑器的正式界面。点击图片可查看原图。</figcaption>
+</figure>
+
+图上的调整也更直接。比如把某个血量判断改成二阶段入口，把冲锋的距离阈值调近，或者让技能被打断后接一次普攻，顺着执行路径找到节点改掉就可以。开发提供移动、选目标、放技能这些基础方法，Boss 什么时候切阶段、先做什么再做什么，则由策划自己在图里安排。
 
 ### 一整套玩法机制
 
 流程图也可以继续向上扩展，用来管理完整的 Gameplay。我当时制作过类似跑跑卡丁车的竞速副玩法，它要处理的就不只是车辆移动，而是从玩家入场、出生点分配和倒计时开始，持续管理检查点、圈数、名次、完成条件、超时结算和最终退出。
+
+<figure class="article-figure-wide">
+  <img src="/images/flowchart-gameplay-visual-scripting/pvz-gameplay-flowchart.png" alt="用 Asyncflow 实现的简化版植物大战僵尸玩法机制流程图，包含波次、种植、僵尸、路线、子弹和失败结算流程" width="2799" height="1374" loading="lazy" decoding="async" />
+  <figcaption>用 Asyncflow 实现的简化版《植物大战僵尸》玩法机制：同一张图里同时管理波次、种植、僵尸行为、子弹命中和失败结算。</figcaption>
+</figure>
 
 在这个尺度上，主流程负责推进玩法阶段，事件节点接收玩家通过检查点、到达终点或中途退出等消息，计时器节点控制开场倒计时和整局时限，不同玩家的状态则可以并行更新。任何一条异常路径——例如玩家没有按时完成、比赛中途掉线，或者结算时人数发生变化——也能作为明确的分支留在图里。
 
@@ -89,6 +101,11 @@ Asyncflow 能处理的不只是几段简单的条件判断。同一套流程图�
 ### 一段任务演出
 
 任务演出关注的又是另一种复杂度。NPC 走到指定位置之后说话，镜头切换完成后播放动作，玩家交互后再进入下一段；如果玩家提前离开、跳过对白或者触发了另一条分支，当前演出还要能够正确结束。
+
+<figure class="article-figure-wide">
+  <img src="/images/flowchart-gameplay-visual-scripting/quest-flowchart-in-game.png" alt="Asyncflow 任务流程图与《逆水寒》任务演出实机画面对照" width="2415" height="789" loading="lazy" decoding="async" />
+  <figcaption>流程图与任务演出实机画面对照。《逆水寒》端游和手游中的任务内容，均由这套工具实现。</figcaption>
+</figure>
 
 这类内容看起来是线性的，实际由大量“等待某件事完成后再继续”组成。流程图可以把对白、移动、镜头、动画和玩家交互排成清楚的时间顺序，同时为不同任务条件保留分支。策划可以直接看到一段演出为什么停住、当前在等待哪个事件，也可以亲手调整一句对白与一个动作之间的间隔。
 
