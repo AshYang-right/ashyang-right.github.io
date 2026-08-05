@@ -9,7 +9,8 @@ export default defineConfig({
   site: "https://ashyang-right.github.io",
   output: "static",
   build: {
-    format: "file"
+    format: "file",
+    inlineStylesheets: "always"
   },
   integrations: [
     mdx(),
