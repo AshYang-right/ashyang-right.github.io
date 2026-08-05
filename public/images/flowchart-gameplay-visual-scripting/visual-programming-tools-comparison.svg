@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 600" role="img" aria-labelledby="title desc">
+  <title id="title">四种游戏可视化编程工具的能力对比</title>
+  <desc id="desc">对比 Asyncflow、Blueprints、Behaviac 和 Behavior Designer 支持的引擎、编程语言与异步节点。Asyncflow 支持跨平台、Lua C# Python 和异步节点。</desc>
+
+  <defs>
+    <style>
+      .title { fill: #f4f7fb; font: 500 32px "Segoe UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+      .subtitle { fill: #aeb8c6; font: 400 20px "Segoe UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+      .header { fill: #d7dde6; font: 500 23px "Segoe UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+      .tool { fill: #f4f7fb; font: 500 26px "Segoe UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+      .cell { fill: #dce2ea; font: 400 23px "Segoe UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+      .cell-muted { fill: #aeb8c6; font: 400 23px "Segoe UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+      .source { fill: #8f99a7; font: 400 17px "Segoe UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+      .divider { stroke: #4b535f; stroke-width: 1.5; }
+      .column-divider { stroke: #3a414b; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="600" fill="#191d23"/>
+
+  <text class="title" x="72" y="58">四种游戏可视化编程工具的能力对比</text>
+  <text class="subtitle" x="72" y="91">论文比较维度：支持的引擎、编程语言与异步节点</text>
+
+  <rect x="72" y="120" width="1296" height="376" rx="12" fill="#22272f" stroke="#4b535f" stroke-width="1.5"/>
+  <path d="M84 120 H1356 Q1368 120 1368 132 V192 H72 V132 Q72 120 84 120 Z" fill="#2c323c"/>
+  <rect x="72" y="192" width="1296" height="76" fill="#20364c"/>
+  <rect x="72" y="192" width="6" height="76" fill="#2688ff"/>
+  <rect x="72" y="344" width="1296" height="76" fill="#20252d"/>
+
+  <line class="divider" x1="72" y1="192" x2="1368" y2="192"/>
+  <line class="divider" x1="72" y1="268" x2="1368" y2="268"/>
+  <line class="divider" x1="72" y1="344" x2="1368" y2="344"/>
+  <line class="divider" x1="72" y1="420" x2="1368" y2="420"/>
+  <line class="column-divider" x1="360" y1="120" x2="360" y2="496"/>
+  <line class="column-divider" x1="700" y1="120" x2="700" y2="496"/>
+  <line class="column-divider" x1="1060" y1="120" x2="1060" y2="496"/>
+
+  <text class="header" x="98" y="165">工具</text>
+  <text class="header" x="390" y="165">支持的引擎</text>
+  <text class="header" x="730" y="165">支持的语言</text>
+  <text class="header" x="1214" y="165" text-anchor="middle">异步节点</text>
+
+  <text class="tool" x="98" y="240">Asyncflow</text>
+  <text class="cell" x="390" y="240">跨平台</text>
+  <text class="cell" x="730" y="240">Lua、C#、Python</text>
+
+  <text class="tool" x="98" y="316">Blueprints</text>
+  <text class="cell-muted" x="390" y="316">Unreal Engine</text>
+  <text class="cell-muted" x="730" y="316">C++</text>
+
+  <text class="tool" x="98" y="392">Behaviac</text>
+  <text class="cell-muted" x="390" y="392">跨平台</text>
+  <text class="cell-muted" x="730" y="392">C++、C#</text>
+
+  <text class="tool" x="98" y="468">Behavior Designer</text>
+  <text class="cell-muted" x="390" y="468">Unity</text>
+  <text class="cell-muted" x="730" y="468">C#</text>
+
+  <g aria-label="Asyncflow 支持异步节点">
+    <circle cx="1214" cy="230" r="18" fill="#1f5fa9"/>
+    <path d="M1205 230 L1211 237 L1224 221" fill="none" stroke="#f4f7fb" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g aria-label="Blueprints 支持异步节点">
+    <circle cx="1214" cy="306" r="18" fill="#343b45" stroke="#6f7987" stroke-width="1.5"/>
+    <path d="M1205 306 L1211 313 L1224 297" fill="none" stroke="#dce2ea" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g aria-label="Behaviac 支持异步节点">
+    <circle cx="1214" cy="382" r="18" fill="#343b45" stroke="#6f7987" stroke-width="1.5"/>
+    <path d="M1205 382 L1211 389 L1224 373" fill="none" stroke="#dce2ea" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g aria-label="Behavior Designer 不支持异步节点">
+    <circle cx="1214" cy="458" r="18" fill="#3a3032" stroke="#756167" stroke-width="1.5"/>
+    <path d="M1206 450 L1222 466 M1222 450 L1206 466" fill="none" stroke="#d2b4ba" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+
+  <text class="source" x="72" y="548">根据 Hu 等人（2021）Table 1 翻译整理；对比仅覆盖论文列出的三项能力。</text>
+</svg>
