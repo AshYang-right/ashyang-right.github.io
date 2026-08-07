@@ -1,7 +1,7 @@
 ---
 title: "用 Asyncflow 写玩法：一种更适合内容策划的工作方式"
 description: "结合《逆水寒》项目中的实际使用经历，讨论内容策划为什么需要直接控制玩法实现，以及 Asyncflow 如何降低 Lua 逻辑开发门槛。"
-publishedAt: 2026-08-05
+publishedAt: 2026-04-19
 tags:
   - 游戏开发
   - 编辑器
