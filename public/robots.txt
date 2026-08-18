@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ashyang-right.github.io/sitemap-index.xml
+Sitemap: https://juehuiyang.com/sitemap-index.xml

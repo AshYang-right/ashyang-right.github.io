@@ -6,7 +6,7 @@ import remarkHeadingIds from "./src/plugins/remark-heading-ids.mjs";
 import rehypeArticleElements from "./src/plugins/rehype-article-elements.mjs";
 
 export default defineConfig({
-  site: "https://ashyang-right.github.io",
+  site: "https://juehuiyang.com",
   output: "static",
   build: {
     format: "file",

@@ -3,6 +3,7 @@ import path from "node:path";
 
 const root = process.cwd();
 const dist = path.join(root, "dist");
+const site = "https://juehuiyang.com";
 const required = [
   "index.html",
   "about.html",
@@ -87,7 +88,7 @@ const sitemapXml = fs.readdirSync(dist)
   .map((file) => fs.readFileSync(path.join(dist, file), "utf8"))
   .join("\n");
 for (const slug of publishedSlugs) {
-  const url = `https://ashyang-right.github.io/posts/${slug}.html`;
+  const url = `${site}/posts/${slug}.html`;
   if (!sitemapXml.includes(url)) errors.push(`Sitemap is missing: ${url}`);
 }
 
