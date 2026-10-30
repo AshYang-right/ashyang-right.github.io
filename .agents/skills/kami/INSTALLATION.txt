@@ -1,0 +1,4 @@
+Source: https://github.com/tw93/Kami
+Commit: b311c77ca53ba7a496271a9e6ab856ed6af1610a
+Version: 1.20.0
+Installed by copying the upstream skill folder; no upstream script or dependency installer was executed.

@@ -15,7 +15,7 @@ const headings = Astro.props.headings.filter((heading) => heading.depth === 2 ||
     </nav>
     <details class="article-toc__mobile">
       <summary>文章目录 · {headings.length} 节</summary>
-      <nav aria-label="文章目录">
+      <nav class="article-toc__scroll" aria-label="文章目录，可独立滚动" tabindex="0">
         <ol>
           {headings.map((heading) => (
             <li class={`depth-${heading.depth}`}><a href={`#${heading.slug}`}>{heading.text}</a></li>
@@ -26,20 +26,33 @@ const headings = Astro.props.headings.filter((heading) => heading.depth === 2 ||
   </aside>
 )}
 <script>
-  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>(".article-toc__desktop a"));
-  const targets = links
-    .map((link) => ({ link, target: document.getElementById(link.hash.slice(1)) }))
-    .filter((entry): entry is { link: HTMLAnchorElement; target: HTMLElement } => Boolean(entry.target));
+  const desktopLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>(".article-toc__desktop a"));
+  const targets = desktopLinks.map((link) => ({
+    link, target: document.getElementById(decodeURIComponent(link.hash.slice(1)))
+  })).filter((entry): entry is { link: HTMLAnchorElement; target: HTMLElement } => Boolean(entry.target));
 
-  if (targets.length > 0 && "IntersectionObserver" in window) {
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-      if (visible[0]) {
-        links.forEach((link) => link.removeAttribute("aria-current"));
-        const active = targets.find((entry) => entry.target === visible[0].target);
-        active?.link.setAttribute("aria-current", "location");
+  let scheduled = false;
+  const updateActiveHeading = () => {
+    scheduled = false;
+    const current = [...targets].reverse().find(({ target }) => target.getBoundingClientRect().top <= 150);
+    desktopLinks.forEach((link) => link.removeAttribute("aria-current"));
+    current?.link.setAttribute("aria-current", "location");
+  };
+  window.addEventListener("scroll", () => {
+    if (!scheduled) { scheduled = true; requestAnimationFrame(updateActiveHeading); }
+  }, { passive: true });
+  window.addEventListener("hashchange", updateActiveHeading);
+  updateActiveHeading();
+
+  document.querySelectorAll<HTMLAnchorElement>(".article-toc__mobile a").forEach((link) => {
+    link.addEventListener("click", () => {
+      const details = link.closest("details");
+      if (details) details.open = false;
+      const target = document.getElementById(decodeURIComponent(link.hash.slice(1)));
+      if (target) {
+        target.setAttribute("tabindex", "-1");
+        requestAnimationFrame(() => target.focus({ preventScroll: true }));
       }
-    }, { rootMargin: "-12% 0px -76% 0px" });
-    targets.forEach((entry) => observer.observe(entry.target));
-  }
+    });
+  });
 </script>

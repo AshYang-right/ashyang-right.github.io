@@ -7,7 +7,7 @@ const posts = await getVisiblePosts();
 <BaseLayout title="专题" description="Ash's Blog 的系列文章与持续写作专题。" canonicalPath="/series.html">
   <main id="main-content" class="shell">
     <header class="page-header">
-      <p class="kicker">Series</p>
+
       <h1>专题</h1>
       <p>把一个问题沿着不同侧面写深。专题内文章按阅读顺序排列。</p>
     </header>
@@ -17,9 +17,9 @@ const posts = await getVisiblePosts();
           const count = posts.filter((post) => post.data.series === slug).length;
           return (
             <article class="series-card">
-              <span class="series-card__count">{count} 篇 · Series</span>
+              <span class="series-card__count">{count} 篇文章</span>
               <div>
-                <h3><a href={`/series/${slug}.html`}>{series.title}</a></h3>
+                <h2><a href={`/series/${slug}.html`}>{series.title}</a></h2>
                 <p>{series.description}</p>
               </div>
             </article>

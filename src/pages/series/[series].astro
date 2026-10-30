@@ -23,7 +23,7 @@ const { slug, series, posts } = Astro.props;
 <BaseLayout title={series.title} description={series.description} canonicalPath={`/series/${slug}.html`}>
   <main id="main-content" class="shell">
     <header class="page-header">
-      <p class="kicker">Series · {posts.length} essays</p>
+      <p class="kicker">专题 / {posts.length} 篇文章</p>
       <h1>{series.title}</h1>
       <p>{series.description}</p>
     </header>
@@ -33,7 +33,7 @@ const { slug, series, posts } = Astro.props;
           <article class="post-row">
             <span class="post-row__number">{String(post.data.seriesOrder).padStart(2, "0")}</span>
             <div>
-              <h3><a href={postUrl(post)}>{post.data.title}</a></h3>
+              <h2><a href={postUrl(post)}>{post.data.title}</a></h2>
               <PostMeta date={post.data.publishedAt} tags={post.data.tags.slice(0, 2)} />
             </div>
             <p>{post.data.description}</p>

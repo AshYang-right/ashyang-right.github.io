@@ -75,6 +75,39 @@ for (const file of htmlFiles) {
   }
 }
 
+// A redesign must retain every explicit legacy deep link, not just file URLs.
+let legacyAnchorCount = 0;
+for (const file of fs.readdirSync(contentDir).filter((name) => /\.mdx?$/.test(name))) {
+  const source = fs.readFileSync(path.join(contentDir, file), "utf8");
+  if (/^draft:\s*true\s*$/m.test(source)) continue;
+  const slug = source.match(/^slug:\s*([a-z0-9-]+)\s*$/m)?.[1];
+  const output = path.join(dist, "posts", `${slug}.html`);
+  if (!fs.existsSync(output)) continue;
+  const html = fs.readFileSync(output, "utf8");
+  const ids = [...source.matchAll(/\{#([A-Za-z][\w:-]*)\}|<span\s+id="([^"]+)"/g)].map((match) => match[1] || match[2]);
+  for (const id of ids) {
+    const count = html.split(`id="${id}"`).length - 1;
+    if (count !== 1) errors.push(`${slug}: legacy anchor #${id} occurs ${count} times`);
+    legacyAnchorCount += 1;
+  }
+}
+for (const file of htmlFiles) {
+  const html = fs.readFileSync(file, "utf8");
+  for (const match of html.matchAll(/href="([^"#]*#[^"]+)"/g)) {
+    const raw = match[1];
+    if (/^(?:https?:|mailto:|tel:|data:)/.test(raw)) continue;
+    const [pathname, hash] = raw.split("#");
+    const id = decodeURIComponent(hash);
+    if (!id) continue;
+    let target = !pathname ? file : pathname.startsWith("/") ? path.join(dist, decodeURIComponent(pathname)) : path.resolve(path.dirname(file), decodeURIComponent(pathname));
+    if (pathname.endsWith("/")) target = path.join(target, "index.html");
+    if (fs.existsSync(target) && target.endsWith(".html")) {
+      const targetHtml = target === file ? html : fs.readFileSync(target, "utf8");
+      if (!targetHtml.includes(`id="${id}"`)) errors.push(`${path.relative(dist, file)}: broken fragment ${raw}`);
+    }
+  }
+}
+
 const rss = fs.existsSync(path.join(dist, "rss.xml"))
   ? fs.readFileSync(path.join(dist, "rss.xml"), "utf8")
   : "";
@@ -98,5 +131,5 @@ if (errors.length) {
 }
 
 console.log(
-  `Static build verified: ${publishedSlugs.length} posts in newest-first order, ${htmlFiles.length} HTML pages, valid internal resources, RSS and sitemap.`,
+  `Static build verified: ${publishedSlugs.length} posts in newest-first order, ${htmlFiles.length} HTML pages, ${legacyAnchorCount} legacy anchors, valid internal resources and fragments, RSS and sitemap.`,
 );

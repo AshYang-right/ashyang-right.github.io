@@ -15,17 +15,17 @@ const { tag, posts } = Astro.props;
 <BaseLayout title={`标签：${tag}`} description={`Ash's Blog 中关于“${tag}”的文章。`} canonicalPath={`/tags/${tagSlug(tag)}.html`}>
   <main id="main-content" class="shell">
     <header class="page-header">
-      <p class="kicker">Tag · {posts.length} essays</p>
+      <p class="kicker">标签 / {posts.length} 篇文章</p>
       <h1>{tag}</h1>
       <p>所有带有“{tag}”标签的正式文章。</p>
     </header>
     <section class="home-section" aria-label={`${tag}文章列表`}>
       <div class="post-list">
-        {posts.map((post, index) => (
-          <article class="post-row">
-            <span class="post-row__number">{String(index + 1).padStart(2, "0")}</span>
+        {posts.map((post) => (
+          <article class="post-row post-row--tag">
+
             <div>
-              <h3><a href={postUrl(post)}>{post.data.title}</a></h3>
+              <h2><a href={postUrl(post)}>{post.data.title}</a></h2>
               <PostMeta date={post.data.publishedAt} tags={post.data.tags.filter((item) => item !== tag).slice(0, 2)} />
             </div>
             <p>{post.data.description}</p>

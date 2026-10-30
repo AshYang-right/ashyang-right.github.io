@@ -21,12 +21,12 @@
   import { sankey, sankeyJustify, sankeyLinkHorizontal } from "d3-sankey";
 
   const colors = {
-    user: "#3e332a",
-    app: "#9a4d2e",
-    model: "#b16a42",
-    compute: "#c88a58",
-    energy: "#d8ad79",
-    profit: "#725d4a",
+    user: "#3d3d3a",
+    app: "#1b365d",
+    model: "#2d5a8a",
+    compute: "#6b6a64",
+    energy: "#a19d91",
+    profit: "#504e49",
   };
 
   document.querySelectorAll<HTMLElement>("[data-money-flow]:not([data-ready])").forEach((root) => {
@@ -94,14 +94,14 @@
 </script>
 
 <style>
-  .data-figure { margin: 2.5rem 0; padding: 1.25rem; border: 1px solid var(--border); background: var(--surface); }
-  .data-figure__heading { text-align: center; }
-  .data-figure__heading h3 { margin: .15rem 0 .35rem; font-size: 1.08rem; }
-  .data-figure__heading p { margin: 0; color: var(--ink-soft); font-size: .82rem; }
-  .data-figure__eyebrow { color: var(--accent) !important; font-size: .72rem !important; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+  .data-figure { margin: 2.5rem 0; padding: 1.25rem; border: 0; border-radius: 8px; background: var(--surface); }
+  .data-figure__heading { text-align: left; }
+  .data-figure__heading h3 { margin: .15rem 0 .35rem; font-size: 1.125rem; }
+  .data-figure__heading p { margin: 0; color: var(--ink-soft); font-size: .875rem; }
+  .data-figure__eyebrow { color: var(--accent) !important; font-size: .75rem !important; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; }
   .data-figure__canvas { margin-top: 1rem; overflow-x: auto; }
   svg { display: block; min-width: 680px; width: 100%; height: auto; }
-  :global(.money-flow__name) { fill: var(--ink); font: 600 13px var(--sans); }
-  :global(.money-flow__amount) { fill: var(--accent); font: 700 12px var(--sans); }
-  figcaption, .data-figure__fallback { margin: .75rem 0 0; text-align: center; color: var(--ink-soft); font-size: .78rem; }
+  :global(.money-flow__name) { fill: var(--ink); font: 500 14px var(--sans); }
+  :global(.money-flow__amount) { fill: var(--accent); font: 500 12px var(--sans); }
+  figcaption, .data-figure__fallback { margin: .75rem 0 0; text-align: left; color: var(--ink-soft); font-size: .875rem; }
 </style>
